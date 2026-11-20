@@ -13659,8 +13659,7 @@ cb_build_move_field (cb_tree src, cb_tree dst)
 cb_tree
 cb_build_move (cb_tree src, cb_tree dst)
 {
-	struct cb_reference	*src_ref, *dst_ref, *x;
-	cb_tree 	chks = NULL;
+	struct cb_reference	*src_ref, *x;
 	cb_tree 	ret;
 	int 	move_zero;
 
@@ -13708,9 +13707,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 		*x = *CB_REFERENCE (dst);
 		x->flag_receiving = 1;
 		dst = CB_TREE (x);
-		dst_ref = x;
-	} else {
-		dst_ref = NULL;
 	}
 
 	if (CB_TREE_CLASS (dst) == CB_CLASS_POINTER
@@ -13741,7 +13737,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
 	}
 
-#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
 	/* TODO: optimize by resolving subscripts as integers once per statement,
 	     77 XX PIC 99 VALUE 5.
 	     01 X         PIC X OCCURS 0 TO 10 DEPENDING ON XX.
@@ -13777,26 +13772,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 		*(b_18 + 7) = 48;
 	  }
 	*/
-	if (src_ref && src_ref->check) {
-		chks = src_ref->check;
-		src_ref->check = NULL;
-		if (dst_ref && dst_ref->check) {
-			chks = cb_list_add (chks, dst_ref->check);
-			dst_ref->check = NULL;
-		}
-	} else
-	if (dst_ref && dst_ref->check) {
-		chks = dst_ref->check;
-		dst_ref->check = NULL;
-	}
-#else
-	if (src_ref && src_ref->check) {
-		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
-	}
-	if (dst_ref && dst_ref->check) {
-		return CB_BUILD_FUNCALL_2 ("cob_move", src, dst);
-	}
-#endif
 
 	/* Output optimal code */
 	if (src == cb_zero) {
@@ -13814,11 +13789,6 @@ cb_build_move (cb_tree src, cb_tree dst)
 	} else {
 		ret = cb_build_move_field (src, dst);
 	}
-#if 1 /* OPTCHK Simon: optimal copy also with runtime checks enabled */
-	if (chks) {
-		return cb_list_add (chks, ret);
-	}
-#endif
 	return ret;
 }
 

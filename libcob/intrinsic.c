@@ -78,8 +78,6 @@ static const cob_field_attr	const_alpha_attr =
 				{COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
 
 /* Working fields */
-static cob_field	*move_field;
-
 static cob_decimal	d1;
 static cob_decimal	d2;
 static cob_decimal	d3;
@@ -107,19 +105,6 @@ static int		set_cob_pi;
 static int		set_cob_sqrt_two;
 static int		set_cob_log_half;
 static int		set_cob_log_ten;
-
-
-/* Stack definitions for created fields */
-
-struct calc_struct {
-	cob_field	calc_field;
-	cob_field_attr	calc_attr;
-	size_t		calc_size;
-};
-
-static struct calc_struct	*calc_base;
-static cob_field		*curr_field;
-static cob_u32_t		curr_entry;
 
 /* Constants for date/day calculations */
 static const int normal_days[] =
@@ -484,36 +469,43 @@ setup_cob_log_ten (void)
 
 /* Local functions */
 
+/* Prepare dst to hold a value with the size and attributes of shape.
+   This reuses the already allocated capacity in dst if possible, or
+   reallocate if not. Then it zero-fills the requested size. */
 static void
-make_field_entry (cob_field *f)
+dyn_field_reshape (cob_dyn_field *dst, const cob_field *shape)
 {
-	struct calc_struct	*calc_temp;
-	unsigned char		*s;
-
-	calc_temp = calc_base + curr_entry;
-	curr_field = &calc_temp->calc_field;
-	if (f->size > calc_temp->calc_size) {
-		/* set new temporary field data, storing its size */
-		if (curr_field->data) {
-			cob_free (curr_field->data);
+	if (shape->size + 1 > dst->capacity) {
+		if (dst->field.data) {
+			cob_free (dst->field.data);
 		}
-		calc_temp->calc_size = f->size + 1;
-		s = cob_malloc (f->size + 1U);
+		dst->capacity = shape->size + 1;
+		dst->field.data = cob_malloc (dst->capacity);
 	} else {
-		/* reuse last temporary field data */
-		s = curr_field->data;
-		memset (s, 0, f->size);
+		memset (dst->field.data, 0, shape->size);
 	}
 
-	*curr_field = *f;
-	calc_temp->calc_attr = *(f->attr);
-	curr_field->attr = &calc_temp->calc_attr;
+	dst->attr = *(shape->attr);
+	dst->field.size = shape->size;
+	dst->field.attr = &dst->attr;
+}
 
-	curr_field->data = s;
+/* Copy src (size, attributes and data) into dst */
+void
+cob_dyn_field_copy (cob_dyn_field *dst, const cob_field *src)
+{
+	dyn_field_reshape (dst, src);
+	memcpy (dst->field.data, src->data, src->size);
+}
 
-	if (++curr_entry >= COB_DEPTH_LEVEL) {
-		curr_entry = 0;
+/* Release the data of f and reset it to its initial (empty) state */
+void
+cob_dyn_field_free (cob_dyn_field *f)
+{
+	if (f->field.data) {
+		cob_free (f->field.data);
 	}
+	memset (f, 0, sizeof (cob_dyn_field));
 }
 
 static int
@@ -577,7 +569,7 @@ cob_trim_decimal (cob_decimal *d)
 }
 
 static void
-cob_alloc_set_field_int (const int val)
+dyn_field_store_int (cob_dyn_field *dst, const int val)
 {
 	cob_u16_t	attrsign;
 	cob_field_attr	attr;
@@ -591,24 +583,24 @@ cob_alloc_set_field_int (const int val)
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9,
 		       0, attrsign, NULL);
 	COB_FIELD_INIT (4, NULL, &attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, &val, sizeof(int));
+	dyn_field_reshape (dst, &field);
+	memcpy (dst->field.data, &val, sizeof(int));
 }
 
 static void
-cob_alloc_set_field_uint (const cob_u32_t val)
+dyn_field_store_uint (cob_dyn_field *dst, const cob_u32_t val)
 {
 	cob_field_attr	attr;
 	cob_field	field;
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 10, 0, 0, NULL);
 	COB_FIELD_INIT (4, NULL, &attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, &val, sizeof(cob_u32_t));
+	dyn_field_reshape (dst, &field);
+	memcpy (dst->field.data, &val, sizeof(cob_u32_t));
 }
 
 static void
-cob_alloc_set_field_pretty (const cob_u32_t val)
+dyn_field_store_pretty (cob_dyn_field *dst, const cob_u32_t val)
 {
 	cob_field_attr	attr;
 	cob_field	field;
@@ -618,12 +610,15 @@ cob_alloc_set_field_pretty (const cob_u32_t val)
 	sz = sprintf(buff,"%d",val);
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, sz, 0, 0, NULL);
 	COB_FIELD_INIT (sz, NULL, &attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, buff, sz);
+	dyn_field_reshape (dst, &field);
+	memcpy (dst->field.data, buff, sz);
 }
 
+/* Store the value of d into dst, using a 4/8-byte binary or numeric DISPLAY
+   layout depending on that value (note: trailing decimal zeros of d are
+   trimmed) */
 static void
-cob_alloc_field (cob_decimal *d)
+dyn_field_store_decimal (cob_dyn_field *dst, cob_decimal *d)
 {
 	size_t		bitnum;
 	int 		negative_sign_pos;
@@ -637,7 +632,10 @@ cob_alloc_field (cob_decimal *d)
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL);
 		COB_FIELD_INIT (4, NULL, &attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
+		/* cob_decimal_get_field does not store a NaN,
+		   but sets the matching size exception */
+		(void)cob_decimal_get_field (d, &dst->field, 0);
 		return;
 	}
 
@@ -657,13 +655,13 @@ cob_alloc_field (cob_decimal *d)
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 9,
 			       (short)d->scale, attrsign, NULL);
 		COB_FIELD_INIT (4, NULL, &attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 	} else if (bitnum < (65 - negative_sign_pos) && d->scale < 19) {
 		/* 8 bytes binary */
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_BINARY, 20,
 			       (short)d->scale, attrsign, NULL);
 		COB_FIELD_INIT (8, NULL, &attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 	} else {
 		/* Display decimal */
 		size = (short)mpz_sizeinbase (d->value, 10);
@@ -674,14 +672,17 @@ cob_alloc_field (cob_decimal *d)
 		COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, size,
 			       scale, attrsign, NULL);
 		COB_FIELD_INIT (size, NULL, &attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 	}
+
+	(void)cob_decimal_get_field (d, &dst->field, 0);
 }
 
 /* Common function for intrinsics MOD and REM */
 
-static cob_field *
-cob_mod_or_rem (cob_field *f1, cob_field *f2, const int func_is_rem)
+static void
+cob_mod_or_rem (cob_dyn_field *dst, cob_field *f1, cob_field *f2,
+		const int func_is_rem)
 {
 	cobglobptr->cob_exception_code = 0;
 	cob_decimal_set_field (&d2, f1);
@@ -690,8 +691,8 @@ cob_mod_or_rem (cob_field *f1, cob_field *f2, const int func_is_rem)
 	if (mpz_sgn (d3.value) == 0) {
 		/* function argument violation */
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_div (&d2, &d3);
@@ -722,9 +723,7 @@ cob_mod_or_rem (cob_field *f1, cob_field *f2, const int func_is_rem)
 	cob_decimal_set_field (&d1, f1);
 	cob_decimal_sub (&d1, &d2);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* TEST-NUMVAL-F implementation */
@@ -1389,8 +1388,9 @@ substitute_matches (cob_field *original, cob_field **matches, cob_field **reps,
 	}
 }
 
-static cob_field *
-substitute (const int offset, const int length, const int params,
+static void
+substitute (cob_dyn_field *dst,
+	    const int offset, const int length, const int params,
 	    int (*cmp_func)(const void *, const void *, size_t),
 	    va_list args)
 {
@@ -1424,19 +1424,18 @@ substitute (const int offset, const int length, const int params,
 
 	COB_FIELD_INIT (0, NULL, &const_alpha_attr);
 	field.size = calcsize;
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
-	substitute_matches (original, matches, reps, numreps, cmp_func, curr_field->data);
+	substitute_matches (original, matches, reps, numreps, cmp_func, dst->field.data);
 
-	/* Output placed in curr_field */
+	/* Output placed in dst */
 
 	cob_free (matches);
 	cob_free (reps);
 
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 static int
@@ -1498,8 +1497,9 @@ enum numval_type {
 	NUMVAL_C
 };
 
-static cob_field *
-numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
+static void
+numval (cob_dyn_field *dst, cob_field *srcfield, cob_field *currency,
+	const enum numval_type type)
 {
 	unsigned char	final_buff [COB_MAX_DIGITS + 1] = { 0 };
 	unsigned char	*p, *p_end;
@@ -1518,8 +1518,8 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 	/* Validate source field */
 	if (cob_check_numval (srcfield, currency, type == NUMVAL_C, 0)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 #endif
 
@@ -1530,15 +1530,15 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 
 	/* no data -> zero */
 	if (datasize == 0) {
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	/* not wasting buffer space (COBOL2027 : 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 #ifdef INVALID_NUMVAL_IS_ZERO
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 #else
 		/* Should this truncate or raise an exception?
 		   What about COBOL2025 new max? */
@@ -1681,10 +1681,7 @@ game_over:
 	}
 
 	d1.scale = decimal_digits;
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* Numeric functions */
@@ -1898,28 +1895,29 @@ locale_time (const int hours, const int minutes, const int seconds,
 
 /* offset and length are for reference modification */
 static void
-cob_alloc_set_field_str (const char *str, const int offset, const int length)
+dyn_field_store_str (cob_dyn_field *dst, const char *str,
+			 const int offset, const int length)
 {
 	const size_t	str_len = strlen (str);
 	cob_field	field;
 
 	COB_FIELD_INIT (str_len, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, str, str_len);
+	dyn_field_reshape (dst, &field);
+	memcpy (dst->field.data, str, str_len);
 
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
 }
 
 static void
-cob_alloc_set_field_spaces (const int n)
+dyn_field_store_spaces (cob_dyn_field *dst, const int n)
 {
 	cob_field	field;
 
 	COB_FIELD_INIT (n, NULL, &const_alpha_attr);
-	make_field_entry (&field);
-	memset (curr_field->data, ' ', (size_t)n);
+	dyn_field_reshape (dst, &field);
+	memset (dst->field.data, ' ', (size_t)n);
 }
 
 /* Date/time functions */
@@ -3139,13 +3137,21 @@ error_not_implemented (void)
 
 /* Global functions */
 
-/* Return switch value as field */
+/* Return switch value as field: a constant binary 0 or 1 */
+
+static const cob_field_attr const_int_attr = {COB_TYPE_NUMERIC_BINARY, 9, 0, 0, NULL};
+static const int const_int[] = { 0, 1 };
+static const cob_field const_zero = { sizeof(int), (unsigned char*)&const_int[0], &const_int_attr };
+static const cob_field const_one = { sizeof(int), (unsigned char*)&const_int[1], &const_int_attr };
+
 
 cob_field *
 cob_switch_value (const int id)
 {
-	cob_alloc_set_field_int (cob_get_switch (id));
-	return curr_field;
+	if (cob_get_switch (id)) 
+		return (cob_field*)&const_one;
+	else
+		return (cob_field*)&const_zero;
 }
 
 /* check if the rules for exponentiation are violated:
@@ -3259,20 +3265,23 @@ cob_decimal_pow (cob_decimal *pd1, cob_decimal *pd2)
 	}
 }
 
-/* Indirect field get/put functions */
+/* Indirect field get/put functions, for a MOVE to several receivers:
+   the source is copied once into indirect_field, then moved to each
+   receiver. TODO: Remove this indirect_field and use a temporary 
+   during codegen instead. */
+
+static cob_dyn_field	indirect_field = {{ 0 }};
 
 void
 cob_put_indirect_field (cob_field *f)
 {
-	make_field_entry (f);
-	memcpy (curr_field->data, f->data, f->size);
-	move_field = curr_field;
+	cob_dyn_field_copy (&indirect_field, f);
 }
 
 void
 cob_get_indirect_field (cob_field *f)
 {
-	cob_move (move_field, f);
+	cob_move (&indirect_field.field, f);
 }
 
 /* Indirect move */
@@ -3280,6 +3289,7 @@ cob_get_indirect_field (cob_field *f)
 void
 cob_decimal_move_temp (cob_field *src, cob_field *dst)
 {
+	unsigned char	buff[2 * COB_MAX_DIGITS] = { 0 };
 	short		size, scale;
 	cob_field_attr	attr;
 	cob_field	field;
@@ -3294,10 +3304,16 @@ cob_decimal_move_temp (cob_field *src, cob_field *dst)
 	scale = (short)d1.scale;
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, size,
 		       scale, COB_FLAG_HAVE_SIGN, NULL);
-	COB_FIELD_INIT (size, NULL, &attr);
-	make_field_entry (&field);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	cob_move (curr_field, dst);
+	if (size <= 2 * COB_MAX_DIGITS) {
+		COB_FIELD_INIT (size, buff, &attr);
+	} else {
+		COB_FIELD_INIT (size, cob_malloc ((size_t)size), &attr);
+	}
+	(void)cob_decimal_get_field (&d1, &field, 0);
+	cob_move (&field, dst);
+	if (field.data != buff) {
+		cob_free (field.data);
+	}
 }
 
 /* TEST-NUMVAL + TEST-NUMVAL-C implementation */
@@ -3648,28 +3664,28 @@ cob_valid_pow (cob_field *f1, cob_field *f2)
 	return !pow_rules_violated (&d1, &d2);
 }
 
-cob_field *
-cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
+void
+cob_intr_binop (cob_dyn_field *dst, cob_field *f1, const int op, cob_field *f2)
 {
 	switch (op) {
 	case 'a':
-		cob_alloc_set_field_uint (cob_get_int (f1) & cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, cob_get_int (f1) & cob_get_int (f2));
+		return;
 	case 'o':
-		cob_alloc_set_field_uint (cob_get_int (f1) | cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, cob_get_int (f1) | cob_get_int (f2));
+		return;
 	case 'e':
-		cob_alloc_set_field_uint (cob_get_int (f1) ^ cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, cob_get_int (f1) ^ cob_get_int (f2));
+		return;
 	case 'l':
-		cob_alloc_set_field_uint (cob_get_int (f1) << cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, cob_get_int (f1) << cob_get_int (f2));
+		return;
 	case 'r':
-		cob_alloc_set_field_uint (cob_get_int (f1) >> cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, cob_get_int (f1) >> cob_get_int (f2));
+		return;
 	case 'n':
-		cob_alloc_set_field_uint ( ~ cob_get_int (f2));
-		return curr_field;
+		dyn_field_store_uint (dst, ~ cob_get_int (f2));
+		return;
 	default:
 		break;
 	}
@@ -3709,46 +3725,42 @@ cob_intr_binop (cob_field *f1, const int op, cob_field *f2)
 		break;
 	}
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* Intrinsics */
 
 /* FUNCTION LENGTH - amount of positions */
-cob_field *
-cob_intr_length (cob_field *srcfield)
+void
+cob_intr_length (cob_dyn_field *dst, cob_field *srcfield)
 {
 	if (COB_MODULE_PTR->flag_pretty_display) {
 		if (COB_FIELD_IS_NATIONAL (srcfield)) {
-			cob_alloc_set_field_pretty ((cob_u32_t)srcfield->size / COB_NATIONAL_SIZE);
+			dyn_field_store_pretty (dst, (cob_u32_t)srcfield->size / COB_NATIONAL_SIZE);
 		} else {
-			cob_alloc_set_field_pretty ((cob_u32_t)srcfield->size);
+			dyn_field_store_pretty (dst, (cob_u32_t)srcfield->size);
 		}
-		return curr_field;
+		return;
 	}
 
 	if (COB_FIELD_IS_NATIONAL (srcfield)) {
-		cob_alloc_set_field_uint ((cob_u32_t)srcfield->size / COB_NATIONAL_SIZE);
+		dyn_field_store_uint (dst, (cob_u32_t)srcfield->size / COB_NATIONAL_SIZE);
 	} else {
-		cob_alloc_set_field_uint ((cob_u32_t)srcfield->size);
+		dyn_field_store_uint (dst, (cob_u32_t)srcfield->size);
 	}
-	return curr_field;
 }
 
 
 /* FUNCTION BYTE-LENGTH (or, as an extension: LENGTH-AN) - amount of bytes */
-cob_field *
-cob_intr_byte_length (cob_field *srcfield)
+void
+cob_intr_byte_length (cob_dyn_field *dst, cob_field *srcfield)
 {
-	cob_alloc_set_field_uint ((cob_u32_t)srcfield->size);
-	return curr_field;
+	dyn_field_store_uint (dst, (cob_u32_t)srcfield->size);
 }
 
 /* FUNCTION INTEGER - integer <= value */
-cob_field *
-cob_intr_integer (cob_field *srcfield)
+void
+cob_intr_integer (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 	/* Check scale */
@@ -3766,14 +3778,12 @@ cob_intr_integer (cob_field *srcfield)
 	}
 	d1.scale = 0;
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* FUNCTION INTEGER-PART - integer portion of value */
-cob_field *
-cob_intr_integer_part (cob_field *srcfield)
+void
+cob_intr_integer_part (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 	/* Check scale */
@@ -3786,14 +3796,12 @@ cob_intr_integer_part (cob_field *srcfield)
 	}
 	d1.scale = 0;
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* FUNCTION FRACTION-PART - fractional portion of value */
-cob_field *
-cob_intr_fraction_part (cob_field *srcfield)
+void
+cob_intr_fraction_part (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 	/* Check scale */
@@ -3806,77 +3814,74 @@ cob_intr_fraction_part (cob_field *srcfield)
 		d1.scale = 0;
 	}
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 /* FUNCTION SIGN - sign of value */
-cob_field *
-cob_intr_sign (cob_field *srcfield)
+void
+cob_intr_sign (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
-	cob_alloc_set_field_int (mpz_sgn (d1.value));
-	return curr_field;
+	dyn_field_store_int (dst, mpz_sgn (d1.value));
 }
 
 /* FUNCTION UPPER-CASE - upper-case in current locale */
-cob_field *
-cob_intr_upper_case (const int offset, const int length, cob_field *srcfield)
+void
+cob_intr_upper_case (cob_dyn_field *dst, const int offset, const int length,
+		     cob_field *srcfield)
 {
 	size_t		i, size;
 
-	make_field_entry (srcfield);
+	dyn_field_reshape (dst, srcfield);
 
 	size = srcfield->size;
 	for (i = 0; i < size; ++i) {
-		curr_field->data[i] = (cob_u8_t)toupper ((unsigned char)srcfield->data[i]);
+		dst->field.data[i] = (cob_u8_t)toupper ((unsigned char)srcfield->data[i]);
 	}
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* FUNCTION LOWER-CASE - lower-case in current locale */
-cob_field *
-cob_intr_lower_case (const int offset, const int length, cob_field *srcfield)
+void
+cob_intr_lower_case (cob_dyn_field *dst, const int offset, const int length,
+		     cob_field *srcfield)
 {
 	size_t		i, size;
 
-	make_field_entry (srcfield);
+	dyn_field_reshape (dst, srcfield);
 
 	size = srcfield->size;
 	for (i = 0; i < size; ++i) {
-		curr_field->data[i] = (cob_u8_t)tolower (srcfield->data[i]);
+		dst->field.data[i] = (cob_u8_t)tolower (srcfield->data[i]);
 	}
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* FUNCTION REVERSE */
-cob_field *
-cob_intr_reverse (const int offset, const int length, cob_field *srcfield)
+void
+cob_intr_reverse (cob_dyn_field *dst, const int offset, const int length,
+		  cob_field *srcfield)
 {
 	size_t		i, size;
 
-	make_field_entry (srcfield);
+	dyn_field_reshape (dst, srcfield);
 
 	size = srcfield->size;
 	for (i = 0; i < size; ++i) {
-		curr_field->data[i] = srcfield->data[size - i - 1];
+		dst->field.data[i] = srcfield->data[size - i - 1];
 	}
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* FUNCTION BIT-OF */
-cob_field *
-cob_intr_bit_of (cob_field *srcfield)
+void
+cob_intr_bit_of (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_field	field;
 	/* FIXME later: srcfield may be of category national - or later bit... */
@@ -3885,20 +3890,19 @@ cob_intr_bit_of (cob_field *srcfield)
 	size_t		i, j;
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	for (i = j = 0; i < srcfield->size; ++i) {
-		curr_field->data[j++] = *byte & 0x80 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x40 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x20 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x10 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x08 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x04 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x02 ? '1' : '0';
-		curr_field->data[j++] = *byte & 0x01 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x80 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x40 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x20 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x10 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x08 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x04 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x02 ? '1' : '0';
+		dst->field.data[j++] = *byte & 0x01 ? '1' : '0';
 		byte++;
 	}
-	return curr_field;
 }
 
 static int
@@ -3911,8 +3915,8 @@ has_bit_checked (const unsigned char byte) {
 }
 
 /* FUNCTION BIT-TO-CHAR */
-cob_field *
-cob_intr_bit_to_char (cob_field *srcfield)
+void
+cob_intr_bit_to_char (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_field	field;
 	const size_t		size = srcfield->size / 8;
@@ -3920,10 +3924,10 @@ cob_intr_bit_to_char (cob_field *srcfield)
 	size_t		i;
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	byte_val = srcfield->data;
-	char_val = curr_field->data;
+	char_val = dst->field.data;
 	for (i = 0; i < size; i++) {
 		*char_val = 0;
 		if (has_bit_checked(*byte_val++)) *char_val |= 0x80;
@@ -3936,12 +3940,11 @@ cob_intr_bit_to_char (cob_field *srcfield)
 		if (has_bit_checked(*byte_val++)) *char_val |= 0x01;
 		char_val++;
 	}
-	return curr_field;
 }
 
 /* FUNCTION HEX-OF (IBM extension) */
-cob_field *
-cob_intr_hex_of (cob_field *srcfield)
+void
+cob_intr_hex_of (cob_dyn_field *dst, cob_field *srcfield)
 {
 	const char hex_val[] = "0123456789ABCDEF";
 
@@ -3950,10 +3953,10 @@ cob_intr_hex_of (cob_field *srcfield)
 	cob_field	field;
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	{
-		register unsigned char *ret_pos = curr_field->data;
+		register unsigned char *ret_pos = dst->field.data;
 		register unsigned char *src_pos = srcfield->data;
 		const unsigned char *src_end = src_pos + srcfield->size;
 
@@ -3962,12 +3965,11 @@ cob_intr_hex_of (cob_field *srcfield)
 			*ret_pos++ = hex_val[*src_pos++ & 0xF];
 		}
 	}
-	return curr_field;
 }
 
 /* FUNCTION HEX-TO-CHAR (IBM extension) */
-cob_field *
-cob_intr_hex_to_char (cob_field *srcfield)
+void
+cob_intr_hex_to_char (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_field	field;
 	const size_t		size = srcfield->size / 2;
@@ -3979,43 +3981,42 @@ cob_intr_hex_to_char (cob_field *srcfield)
 	}
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
-	hex_char = curr_field->data;
+	hex_char = dst->field.data;
 
 	p = srcfield->data;
 	while (p < end) {
-		unsigned char dst;
+		unsigned char val;
 		if (*p >= '0' && *p <= '9') {
-			dst = COB_D2I (*p);
+			val = COB_D2I (*p);
 		} else if (*p >= 'A' && *p <= 'F') {
-			dst = *p - 'A' + 10;
+			val = *p - 'A' + 10;
 		} else if (*p >= 'a' && *p <= 'f') {
-			dst = *p - 'a' + 10;
+			val = *p - 'a' + 10;
 		} else {
-			dst = 0;
+			val = 0;
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
 		p++;
-		dst *= 16;
+		val *= 16;
 		if (*p >= '0' && *p <= '9') {
-			dst = dst + COB_D2I (*p);
+			val = val + COB_D2I (*p);
 		} else if (*p >= 'A' && *p <= 'F') {
-			dst = dst + *p - 'A' + 10;
+			val = val + *p - 'A' + 10;
 		} else if (*p >= 'a' && *p <= 'f') {
-			dst = dst + *p - 'a' + 10;
+			val = val + *p - 'a' + 10;
 		} else {
 			cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
 		}
 		p++;
-		*hex_char++ = dst;
+		*hex_char++ = val;
 	}
-	return curr_field;
 }
 
 /* FUNCTION MODULE-DATE (OC extension) */
-cob_field *
-cob_intr_module_date (void)
+void
+cob_intr_module_date (cob_dyn_field *dst)
 {
 	cob_field_attr	attr;
 	cob_field	field;
@@ -4023,15 +4024,14 @@ cob_intr_module_date (void)
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, 8, 0, 0, NULL);
 	COB_FIELD_INIT (8, NULL, &attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	snprintf (buff, sizeof(buff), "%8.8u", COB_MODULE_PTR->module_date);
-	memcpy (curr_field->data, buff, (size_t)8);
-	return curr_field;
+	memcpy (dst->field.data, buff, (size_t)8);
 }
 
 /* FUNCTION MODULE-TIME (OC extension) */
-cob_field *
-cob_intr_module_time (void)
+void
+cob_intr_module_time (cob_dyn_field *dst)
 {
 	cob_field_attr	attr;
 	cob_field	field;
@@ -4039,72 +4039,66 @@ cob_intr_module_time (void)
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, 6, 0, 0, NULL);
 	COB_FIELD_INIT (6, NULL, &attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	snprintf (buff, sizeof(buff), "%6.6u", COB_MODULE_PTR->module_time);
-	memcpy (curr_field->data, buff, (size_t)6);
-	return curr_field;
+	memcpy (dst->field.data, buff, (size_t)6);
 }
 
 /* FUNCTION MODULE-ID (OC extension) / MODULE-NAME (2023) */
-cob_field *
-cob_intr_module_id (void)
+void
+cob_intr_module_id (cob_dyn_field *dst)
 {
-	cob_alloc_set_field_str (COB_MODULE_PTR->module_name, 0, 0);
-	return curr_field;
+	dyn_field_store_str (dst, COB_MODULE_PTR->module_name, 0, 0);
 }
 
 /* FUNCTION MODULE-CALLER-ID (OC extension) */
-cob_field *
-cob_intr_module_caller_id (void)
+void
+cob_intr_module_caller_id (cob_dyn_field *dst)
 {
 	if (!COB_MODULE_PTR->next) {
 		cob_field	field;
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		curr_field->size = 0;
-		curr_field->data[0] = ' ';
-		return curr_field;
+		dyn_field_reshape (dst, &field);
+		dst->field.size = 0;
+		dst->field.data[0] = ' ';
+		return;
 	}
-	cob_alloc_set_field_str (COB_MODULE_PTR->next->module_name, 0, 0);
-	return curr_field;
+	dyn_field_store_str (dst, COB_MODULE_PTR->next->module_name, 0, 0);
 }
 
 /* FUNCTION MODULE-FORMATTED-DATE (OC extension) */
-cob_field *
-cob_intr_module_formatted_date (void)
+void
+cob_intr_module_formatted_date (cob_dyn_field *dst)
 {
-	cob_alloc_set_field_str (COB_MODULE_PTR->module_formatted_date, 0, 0);
-	return curr_field;
+	dyn_field_store_str (dst, COB_MODULE_PTR->module_formatted_date, 0, 0);
 }
 
 /* FUNCTION MODULE-SOURCE (OC extension) */
-cob_field *
-cob_intr_module_source (void)
+void
+cob_intr_module_source (cob_dyn_field *dst)
 {
-	cob_alloc_set_field_str (COB_MODULE_PTR->module_source, 0, 0);
-	return curr_field;
+	dyn_field_store_str (dst, COB_MODULE_PTR->module_source, 0, 0);
 }
 
 /* FUNCTION MODULE-PATH (OC extension) */
-cob_field *
-cob_intr_module_path (void)
+void
+cob_intr_module_path (cob_dyn_field *dst)
 {
 	if (!COB_MODULE_PTR->module_path
 	 || !(*COB_MODULE_PTR->module_path)) {
 		cob_field	field;
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		curr_field->size = 0;
-		curr_field->data[0] = ' ';
-		return curr_field;
+		dyn_field_reshape (dst, &field);
+		dst->field.size = 0;
+		dst->field.data[0] = ' ';
+		return;
 	}
-	cob_alloc_set_field_str (*COB_MODULE_PTR->module_path, 0, 0);
-	return curr_field;
+	dyn_field_store_str (dst, *COB_MODULE_PTR->module_path, 0, 0);
 }
 
 /* FUNCTION CONCATENATE (OC extension) / CONCAT (2023) */
-cob_field *
-cob_intr_concatenate (const int offset, const int length,
+void
+cob_intr_concatenate (cob_dyn_field *dst, const int offset, const int length,
 		      const int params, ...)
 {
 	cob_field	**f;
@@ -4127,54 +4121,47 @@ cob_intr_concatenate (const int offset, const int length,
 	va_end (args);
 
 	COB_FIELD_INIT (calcsize, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
-	p = curr_field->data;
+	p = dst->field.data;
 	for (i = 0; i < params; ++i) {
 		memcpy (p, f[i]->data, f[i]->size);
 		p += f[i]->size;
 	}
 
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
 	cob_free (f);
-	return curr_field;
 }
 
 /* FUNCTION SUBSTITUTE (OC extension / 2023) */
-cob_field *
-cob_intr_substitute (const int offset, const int length,
+void
+cob_intr_substitute (cob_dyn_field *dst, const int offset, const int length,
 		     const int params, ...)
 {
-	cob_field	*ret;
 	va_list		args;
 
 	va_start (args, params);
-	ret = substitute (offset, length, params, &memcmp, args);
+	substitute (dst, offset, length, params, &memcmp, args);
 	va_end (args);
-
-	return ret;
 }
 
 /* FUNCTION SUBSTITUTE-CASE (OC extension) / SUBSTITUTE ANYCASE (2023) */
-cob_field *
-cob_intr_substitute_case (const int offset, const int length,
+void
+cob_intr_substitute_case (cob_dyn_field *dst, const int offset, const int length,
 			  const int params, ...)
 {
-	cob_field	*ret;
 	va_list		args;
 
 	va_start (args, params);
-	ret = substitute (offset, length, params, &int_strncasecmp, args);
+	substitute (dst, offset, length, params, &int_strncasecmp, args);
 	va_end (args);
-
-	return ret;
 }
 
 /* FUNCTION TRIM */
-cob_field *
-cob_intr_trim (const int offset, const int length,
+void
+cob_intr_trim (cob_dyn_field *dst, const int offset, const int length,
 		cob_field *srcfield, const int direction)
 {
 	unsigned char	*begin;
@@ -4182,7 +4169,7 @@ cob_intr_trim (const int offset, const int length,
 	size_t		i;
 	size_t		size;
 
-	make_field_entry (srcfield);
+	dyn_field_reshape (dst, srcfield);
 
 	for (i = 0; i < srcfield->size; ++i) {
 		if (srcfield->data[i] != ' ') {
@@ -4190,9 +4177,9 @@ cob_intr_trim (const int offset, const int length,
 		}
 	}
 	if (i == srcfield->size) {
-		curr_field->size = 0;
-		curr_field->data[0] = ' ';
-		return curr_field;
+		dst->field.size = 0;
+		dst->field.data[0] = ' ';
+		return;
 	}
 
 	begin = srcfield->data;
@@ -4206,21 +4193,20 @@ cob_intr_trim (const int offset, const int length,
 
 	size = 0;
 	for (i = 0; begin <= end; ++begin, ++i) {
-		curr_field->data[i] = *begin;
+		dst->field.data[i] = *begin;
 		++size;
 	}
-	curr_field->size = size;
+	dst->field.size = size;
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* FUNCTION EXCEPION-FILE
    get variable length (at least 2) temporary field containing
    last file exception status + name */
-cob_field *
-cob_intr_exception_file (void)
+void
+cob_intr_exception_file (cob_dyn_field *dst)
 {
 	size_t		flen;
 	cob_field	field;
@@ -4230,32 +4216,31 @@ cob_intr_exception_file (void)
 	if (!cobglobptr->cob_error_file ||
 	    (!cob_last_exception_is (COB_EC_I_O))) {
 		field.size = 2;
-		make_field_entry (&field);
-		memcpy (curr_field->data, "00", (size_t)2);
+		dyn_field_reshape (dst, &field);
+		memcpy (dst->field.data, "00", (size_t)2);
 	} else {
 		flen = strlen (cobglobptr->cob_error_file->select_name);
 		field.size = flen + 2;
-		make_field_entry (&field);
-		memcpy (curr_field->data,
+		dyn_field_reshape (dst, &field);
+		memcpy (dst->field.data,
 			cobglobptr->cob_error_file->file_status, (size_t)2);
-		memcpy (&(curr_field->data[2]),
+		memcpy (&(dst->field.data[2]),
 			cobglobptr->cob_error_file->select_name, flen);
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION EXCEPTION-LOCATION
    get variable length (at least 1) temporary field containing last exception location */
-cob_field *
-cob_intr_exception_location (void)
+void
+cob_intr_exception_location (cob_dyn_field *dst)
 {
 	/* check if last-exception is active and if LOCATION is available */
 	if (!cobglobptr->last_exception_id) {
 		cob_field	field;
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
 		field.size = 1;
-		make_field_entry (&field);
-		*(curr_field->data) = ' ';
+		dyn_field_reshape (dst, &field);
+		*(dst->field.data) = ' ';
 	} else {
 		char buff[COB_SMALL_BUFF];
 		if (cobglobptr->last_exception_section
@@ -4281,80 +4266,75 @@ cob_intr_exception_location (void)
 				  cobglobptr->last_exception_line);
 		}
 		buff[COB_SMALL_MAX] = 0; /* silence warnings */
-		cob_alloc_set_field_str (buff, 0, 0);
+		dyn_field_store_str (dst, buff, 0, 0);
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION EXCEPTION-STATUS
    get X(31) temporary field containing last exception name */
-cob_field *
-cob_intr_exception_status (void)
+void
+cob_intr_exception_status (cob_dyn_field *dst)
 {
 	const char	*except_name;
 	cob_field	field;
 
 	COB_FIELD_INIT (31, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
-	memset (curr_field->data, ' ', (size_t)31);
+	memset (dst->field.data, ' ', (size_t)31);
 	if (cob_get_last_exception_code() != 0) {
 		except_name = cob_get_last_exception_name ();
 		if (except_name == NULL) {
 			except_name = "EXCEPTION-OBJECT";
 		}
-		memcpy (curr_field->data, except_name, strlen (except_name));
+		memcpy (dst->field.data, except_name, strlen (except_name));
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION EXCEPTION-STATEMENT
    get X(31) temporary field containing last exception statement */
-cob_field *
-cob_intr_exception_statement (void)
+void
+cob_intr_exception_statement (cob_dyn_field *dst)
 {
 	size_t		flen;
 	cob_field	field;
 
 	COB_FIELD_INIT (31, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
-	memset (curr_field->data, ' ', (size_t)31);
+	memset (dst->field.data, ' ', (size_t)31);
 	if (cobglobptr->last_exception_statement != STMT_UNKNOWN) {
 		const char *statement = cob_statement_name[cobglobptr->last_exception_statement];
 		flen = strlen (statement);
 		if (flen > 31) {
 			flen = 31;
 		}
-		memcpy (curr_field->data, statement, flen);
+		memcpy (dst->field.data, statement, flen);
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION WHEN-COMPILED */
-cob_field *
-cob_intr_when_compiled (const int offset, const int length, cob_field *f)
+void
+cob_intr_when_compiled (cob_dyn_field *dst, const int offset, const int length,
+			cob_field *f)
 {
-	make_field_entry (f);
-
-	memcpy (curr_field->data, f->data, f->size);
+	cob_dyn_field_copy (dst, f);
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION CURRENT-DATE,
    using the actual current date adjusted/replaced with COB_CURRENT_DATE */
-cob_field *
-cob_intr_current_date (const int offset, const int length)
+void
+cob_intr_current_date (cob_dyn_field *dst, const int offset, const int length)
 {
 	cob_field	field;
 	struct cob_time time;
 	char		buff[22] = { '\0' };
 
 	COB_FIELD_INIT (21, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	if (offset == 1 && length <= 14) {
 		time = cob_get_current_datetime (DTR_TIME_NO_NANO);
@@ -4368,27 +4348,26 @@ cob_intr_current_date (const int offset, const int length)
 
 	add_offset_time (0, &time.utc_offset, 16, buff);
 
-	memcpy (curr_field->data, buff, (size_t)21);
+	memcpy (dst->field.data, buff, (size_t)21);
 	if (offset != 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* implementation of FUNCTION CHAR - character from ordinal */
-cob_field *
-cob_intr_char (cob_field *srcfield)
+void
+cob_intr_char (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		i;
 	cob_field	field;
 
 	COB_FIELD_INIT (1, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	i = cob_get_int (srcfield);
 	if (i < 1 || i > 256) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		*curr_field->data = 0;
+		*dst->field.data = 0;
 	} else {
 		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
 		unsigned char chr;
@@ -4403,13 +4382,12 @@ cob_intr_char (cob_field *srcfield)
 				chr = 0;
 			}
 		}
-		*curr_field->data = chr;
+		*dst->field.data = chr;
 	}
-	return curr_field;
 }
 
-cob_field *
-cob_intr_ord (cob_field *srcfield)
+void
+cob_intr_ord (cob_dyn_field *dst, cob_field *srcfield)
 {
 	switch (COB_FIELD_TYPE (srcfield)) {
 	case COB_TYPE_NATIONAL:
@@ -4419,15 +4397,14 @@ cob_intr_ord (cob_field *srcfield)
 		const unsigned char *col = COB_MODULE_PTR->collating_sequence;
 		unsigned char chr = *srcfield->data;
 		int ord = (col == NULL ? chr : col[chr]) + 1U;
-		cob_alloc_set_field_uint ((cob_u32_t)ord);
+		dyn_field_store_uint (dst, (cob_u32_t)ord);
 		break;
 	}
 	}
-	return curr_field;
 }
 
-cob_field *
-cob_intr_stored_char_length (cob_field *srcfield)
+void
+cob_intr_stored_char_length (cob_dyn_field *dst, cob_field *srcfield)
 {
 	unsigned char	*p;
 	cob_u32_t	count;
@@ -4440,12 +4417,12 @@ cob_intr_stored_char_length (cob_field *srcfield)
 		}
 	}
 
-	cob_alloc_set_field_uint (count);
-	return curr_field;
+	dyn_field_store_uint (dst, count);
 }
 
-cob_field *
-cob_intr_combined_datetime (cob_field *srcdays, cob_field *srctime)
+void
+cob_intr_combined_datetime (cob_dyn_field *dst, cob_field *srcdays,
+			    cob_field *srctime)
 {
 	int		srdays;
 	cob_decimal	*combined_datetime;
@@ -4479,18 +4456,16 @@ cob_intr_combined_datetime (cob_field *srcdays, cob_field *srctime)
 	cob_decimal_div (srtime,  hundred_thousand);
 	cob_decimal_add (combined_datetime, srtime);
 
-	cob_alloc_field (combined_datetime);
-	(void) cob_decimal_get_field (combined_datetime, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, combined_datetime);
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
-cob_field *
-cob_intr_date_of_integer (cob_field *srcdays)
+void
+cob_intr_date_of_integer (cob_dyn_field *dst, cob_field *srcdays)
 {
 	int		days;
 	int		month;
@@ -4501,26 +4476,25 @@ cob_intr_date_of_integer (cob_field *srcdays)
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, 8, 0, 0, NULL);
 	COB_FIELD_INIT (8, NULL, &attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	cobglobptr->cob_exception_code = 0;
 	/* Base 1601-01-01 */
 	days = cob_get_int (srcdays);
 	if (!valid_integer_date (days)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		memset (curr_field->data, (int)'0', (size_t)8);
-		return curr_field;
+		memset (dst->field.data, (int)'0', (size_t)8);
+		return;
 	}
 
 	date_of_integer (days, &year, &month, &days);
 
 	snprintf (buff, (size_t)15, "%4.4d%2.2d%2.2d", year, month, days);
-	memcpy (curr_field->data, buff, (size_t)8);
-	return curr_field;
+	memcpy (dst->field.data, buff, (size_t)8);
 }
 
-cob_field *
-cob_intr_day_of_integer (cob_field *srcdays)
+void
+cob_intr_day_of_integer (cob_dyn_field *dst, cob_field *srcdays)
 {
 	int		days;
 	int		baseyear;
@@ -4531,15 +4505,15 @@ cob_intr_day_of_integer (cob_field *srcdays)
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DISPLAY, 7, 0, 0, NULL);
 	COB_FIELD_INIT (7, NULL, &attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	cobglobptr->cob_exception_code = 0;
 	/* Base 1601-01-01 */
 	days = cob_get_int (srcdays);
 	if (!valid_integer_date (days)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		memset (curr_field->data, (int)'0', (size_t)7);
-		return curr_field;
+		memset (dst->field.data, (int)'0', (size_t)7);
+		return;
 	}
 
 	day_of_integer (days, &baseyear, &days);
@@ -4547,12 +4521,11 @@ cob_intr_day_of_integer (cob_field *srcdays)
 		(cob_u16_t) baseyear,
 		(cob_u16_t) days);
 
-	memcpy (curr_field->data, buff, (size_t)7);
-	return curr_field;
+	memcpy (dst->field.data, buff, (size_t)7);
 }
 
-cob_field *
-cob_intr_integer_of_date (cob_field *srcfield)
+void
+cob_intr_integer_of_date (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		indate;
 	int		days;
@@ -4565,29 +4538,28 @@ cob_intr_integer_of_date (cob_field *srcfield)
 	year = indate / 10000;
 	if (!valid_year (year)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	indate %= 10000;
 	month = indate / 100;
 	if (!valid_month (month)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	days = indate % 100;
 	if (!valid_day_of_month (year, month, days)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
-	cob_alloc_set_field_uint (integer_of_date (year, month, days));
-	return curr_field;
+	dyn_field_store_uint (dst, integer_of_date (year, month, days));
 }
 
-cob_field *
-cob_intr_integer_of_day (cob_field *srcfield)
+void
+cob_intr_integer_of_day (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		indate;
 	int		days;
@@ -4599,22 +4571,21 @@ cob_intr_integer_of_day (cob_field *srcfield)
 	year = indate / 1000;
 	if (!valid_year (year)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	days = indate % 1000;
 	if (!valid_day_of_year (year, days)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
-	cob_alloc_set_field_uint (integer_of_day (year, days));
-	return curr_field;
+	dyn_field_store_uint (dst, integer_of_day (year, days));
 }
 
-cob_field *
-cob_intr_test_date_yyyymmdd (cob_field *srcfield)
+void
+cob_intr_test_date_yyyymmdd (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		indate;
 	int		days;
@@ -4625,26 +4596,25 @@ cob_intr_test_date_yyyymmdd (cob_field *srcfield)
 	indate = cob_get_int (srcfield);
 	year = indate / 10000;
 	if (!valid_year (year)) {
-		cob_alloc_set_field_uint (1);
-		return curr_field;
+		dyn_field_store_uint (dst, 1);
+		return;
 	}
 	indate %= 10000;
 	month = indate / 100;
 	if (!valid_month (month)) {
-		cob_alloc_set_field_uint (2);
-		return curr_field;
+		dyn_field_store_uint (dst, 2);
+		return;
 	}
 	days = indate % 100;
 	if (!valid_day_of_month (year, month, days)) {
-		cob_alloc_set_field_uint (3);
-		return curr_field;
+		dyn_field_store_uint (dst, 3);
+		return;
 	}
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
-cob_field *
-cob_intr_test_day_yyyyddd (cob_field *srcfield)
+void
+cob_intr_test_day_yyyyddd (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		indate;
 	int		days;
@@ -4654,20 +4624,19 @@ cob_intr_test_day_yyyyddd (cob_field *srcfield)
 	indate = cob_get_int (srcfield);
 	year = indate / 1000;
 	if (!valid_year (year)) {
-		cob_alloc_set_field_uint (1);
-		return curr_field;
+		dyn_field_store_uint (dst, 1);
+		return;
 	}
 	days = indate % 1000;
 	if (!valid_day_of_year (year, days)) {
-		cob_alloc_set_field_uint (2);
-		return curr_field;
+		dyn_field_store_uint (dst, 2);
+		return;
 	}
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
-cob_field *
-cob_intr_factorial (cob_field *srcfield)
+void
+cob_intr_factorial (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		srcval;
 
@@ -4676,44 +4645,36 @@ cob_intr_factorial (cob_field *srcfield)
 	d1.scale = 0;
 	if (srcval < 0) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	} else {
 		mpz_fac_ui (d1.value, (cob_uli_t)srcval);
 	}
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_e (void)
+void
+cob_intr_e (cob_dyn_field *dst)
 {
 	mpf_set_ui (cob_mpft, 1UL);
 	cob_mpf_exp (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_pi (void)
+void
+cob_intr_pi (cob_dyn_field *dst)
 {
 	if (!set_cob_pi) setup_cob_pi ();
 
 	mpf_set (cob_mpft, cob_pi);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_exp (cob_field *srcfield)
+void
+cob_intr_exp (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4721,21 +4682,18 @@ cob_intr_exp (cob_field *srcfield)
 
 	if (mpz_sgn (d1.value) == 0) {
 		/* Power is zero */
-		cob_alloc_set_field_uint (1);
-		return curr_field;
+		dyn_field_store_uint (dst, 1);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_exp (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_exp10 (cob_field *srcfield)
+void
+cob_intr_exp10 (cob_dyn_field *dst, cob_field *srcfield)
 {
 	int		sign;	/* no const as we need the decimal set before */
 
@@ -4746,8 +4704,8 @@ cob_intr_exp10 (cob_field *srcfield)
 	sign = mpz_sgn (d1.value);
 	if (sign == 0) {
 		/* Power is zero */
-		cob_alloc_set_field_uint (1);
-		return curr_field;
+		dyn_field_store_uint (dst, 1);
+		return;
 	}
 
 	cob_trim_decimal (&d1);
@@ -4758,29 +4716,24 @@ cob_intr_exp10 (cob_field *srcfield)
 			mpz_abs (d1.value, d1.value);
 			d1.scale = mpz_get_si (d1.value);
 			mpz_set_ui (d1.value, 1UL);
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			return curr_field;
+			dyn_field_store_decimal (dst, &d1);
+			return;
 		}
 		if (sign == 1 && mpz_fits_ulong_p (d1.value)) {
 			mpz_ui_pow_ui (d1.value, 10UL, mpz_get_ui (d1.value));
-			cob_alloc_field (&d1);
-			(void)cob_decimal_get_field (&d1, curr_field, 0);
-			return curr_field;
+			dyn_field_store_decimal (dst, &d1);
+			return;
 		}
 	}
 
 	mpz_set_ui (d2.value, 10UL);
 	d2.scale = 0;
 	cob_decimal_pow (&d2, &d1);
-	cob_alloc_field (&d2);
-	(void)cob_decimal_get_field (&d2, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d2);
 }
 
-cob_field *
-cob_intr_log (cob_field *srcfield)
+void
+cob_intr_log (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4788,8 +4741,8 @@ cob_intr_log (cob_field *srcfield)
 	if (mpz_sgn (d1.value) != 1) {
 		/* value must be > 0 */
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	if (d1.scale) {
@@ -4798,21 +4751,18 @@ cob_intr_log (cob_field *srcfield)
 
 	if (!d1.scale && !mpz_cmp_ui (d1.value, 1UL)) {
 		/* Log (1) = 0 */
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_log (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_log10 (cob_field *srcfield)
+void
+cob_intr_log10 (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4820,8 +4770,8 @@ cob_intr_log10 (cob_field *srcfield)
 	if (mpz_sgn (d1.value) != 1) {
 		/* value must be > 0 */
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	if (d1.scale) {
@@ -4830,32 +4780,29 @@ cob_intr_log10 (cob_field *srcfield)
 
 	if (!d1.scale && !mpz_cmp_ui (d1.value, 1UL)) {
 		/* Log10 (1) = 0 */
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_log10 (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_abs (cob_field *srcfield)
+void
+cob_intr_abs (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 	mpz_abs (d1.value, d1.value);
 
-	make_field_entry (srcfield);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	/* note: the result keeps the attributes of the argument */
+	dyn_field_reshape (dst, srcfield);
+	(void)cob_decimal_get_field (&d1, &dst->field, 0);
 }
 
-cob_field *
-cob_intr_acos (cob_field *srcfield)
+void
+cob_intr_acos (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4871,21 +4818,18 @@ cob_intr_acos (cob_field *srcfield)
 	cobglobptr->cob_exception_code = 0;
 	if (cob_decimal_cmp (&d4, &d2) < 0 || cob_decimal_cmp (&d5, &d3) > 0) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_acos (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_asin (cob_field *srcfield)
+void
+cob_intr_asin (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4902,27 +4846,24 @@ cob_intr_asin (cob_field *srcfield)
 	if (cob_decimal_cmp (&d4, &d2) < 0
 	 || cob_decimal_cmp (&d5, &d3) > 0) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	if (mpz_sgn (d1.value) == 0) {
 		/* Asin (0) = 0 */
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_asin (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_atan (cob_field *srcfield)
+void
+cob_intr_atan (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4930,21 +4871,18 @@ cob_intr_atan (cob_field *srcfield)
 
 	if (mpz_sgn (d1.value) == 0) {
 		/* Atan (0) = 0 */
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_atan (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_cos (cob_field *srcfield)
+void
+cob_intr_cos (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4953,14 +4891,11 @@ cob_intr_cos (cob_field *srcfield)
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_cos (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_sin (cob_field *srcfield)
+void
+cob_intr_sin (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4969,14 +4904,11 @@ cob_intr_sin (cob_field *srcfield)
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_sin (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_tan (cob_field *srcfield)
+void
+cob_intr_tan (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -4985,14 +4917,11 @@ cob_intr_tan (cob_field *srcfield)
 	cob_decimal_get_mpf (cob_mpft, &d1);
 	cob_mpf_tan (cob_mpft, cob_mpft);
 	cob_decimal_set_mpf (&d1, cob_mpft);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_sqrt (cob_field *srcfield)
+void
+cob_intr_sqrt (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_decimal_set_field (&d1, srcfield);
 
@@ -5000,8 +4929,8 @@ cob_intr_sqrt (cob_field *srcfield)
 	if (mpz_sgn (d1.value) == -1) {
 		/* value must be >= 0 */
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	mpz_set_ui (d2.value, 5UL);
@@ -5009,28 +4938,25 @@ cob_intr_sqrt (cob_field *srcfield)
 	cob_trim_decimal (&d1);
 	cob_decimal_pow (&d1, &d2);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_numval (cob_field *srcfield)
+void
+cob_intr_numval (cob_dyn_field *dst, cob_field *srcfield)
 {
-	return numval (srcfield, NULL, NUMVAL);
+	numval (dst, srcfield, NULL, NUMVAL);
 }
 
-cob_field *
-cob_intr_numval_c (cob_field *srcfield, cob_field *currency)
+void
+cob_intr_numval_c (cob_dyn_field *dst, cob_field *srcfield, cob_field *currency)
 {
-	return numval (srcfield, currency, NUMVAL_C);
+	numval (dst, srcfield, currency, NUMVAL_C);
 }
 
 /* NUMVAL-F implementation */
 
-cob_field *
-cob_intr_numval_f (cob_field *srcfield)
+void
+cob_intr_numval_f (cob_dyn_field *dst, cob_field *srcfield)
 {
 	unsigned char	*final_buff;
 	unsigned char	*p, *p_end;
@@ -5048,8 +4974,8 @@ cob_intr_numval_f (cob_field *srcfield)
 	/* Validate source field */
 	if (cob_check_numval_f (srcfield)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 #endif
 
@@ -5060,8 +4986,8 @@ cob_intr_numval_f (cob_field *srcfield)
 
 	/* no data -> zero */
 	if (datasize == 0) {
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	/* not wasting buffer space (COBOL2022: 35/34 max)... */
 	if (datasize > COB_MAX_DIGITS) {
@@ -5194,9 +5120,8 @@ game_over:
 	if (mpz_sgn (d1.value) == 0) {
 		/* Value is zero ; sign and exponent irrelevant */
 		d1.scale = 0;
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
-		return curr_field;
+		dyn_field_store_decimal (dst, &d1);
+		return;
 	}
 	if (plus_minus == -1) {
 		mpz_neg (d1.value, d1.value);
@@ -5222,14 +5147,12 @@ game_over:
 		d1.scale = decimal_digits;
 	}
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_annuity (cob_field *srcfield1, cob_field *srcfield2)
+void
+cob_intr_annuity (cob_dyn_field *dst, cob_field *srcfield1,
+		  cob_field *srcfield2)
 {
 	int		sign;	/* no const as we need the decimal set before */
 
@@ -5240,17 +5163,16 @@ cob_intr_annuity (cob_field *srcfield1, cob_field *srcfield2)
 	sign = mpz_sgn (d1.value);
 	if (sign < 0 || mpz_sgn (d2.value) <= 0 || d2.scale != 0) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	if (sign == 0) {
 		mpz_set_ui (d1.value, 1UL);
 		d1.scale = 0;
 		cob_decimal_div (&d1, &d2);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
-		return curr_field;
+		dyn_field_store_decimal (dst, &d1);
+		return;
 	}
 
 	/* x = P1 / (1 - (1 + P1) ^ (-P2)) */
@@ -5270,13 +5192,11 @@ cob_intr_annuity (cob_field *srcfield1, cob_field *srcfield2)
 	cob_trim_decimal (&d4);
 	cob_trim_decimal (&d1);
 	cob_decimal_div (&d1, &d4);
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_sum (const int params, ...)
+void
+cob_intr_sum (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5294,13 +5214,11 @@ cob_intr_sum (const int params, ...)
 	}
 	va_end (args);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_ord_min (const int params, ...)
+void
+cob_intr_ord_min (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	cob_field	*basef;
@@ -5321,12 +5239,11 @@ cob_intr_ord_min (const int params, ...)
 	}
 	va_end (args);
 
-	cob_alloc_set_field_uint (ordmin);
-	return curr_field;
+	dyn_field_store_uint (dst, ordmin);
 }
 
-cob_field *
-cob_intr_ord_max (const int params, ...)
+void
+cob_intr_ord_max (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	cob_field	*basef;
@@ -5347,12 +5264,11 @@ cob_intr_ord_max (const int params, ...)
 	}
 	va_end (args);
 
-	cob_alloc_set_field_uint (ordmax);
-	return curr_field;
+	dyn_field_store_uint (dst, ordmax);
 }
 
-cob_field *
-cob_intr_min (const int params, ...)
+void
+cob_intr_min (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	cob_field	*basef;
@@ -5370,13 +5286,11 @@ cob_intr_min (const int params, ...)
 	}
 	va_end (args);
 
-	make_field_entry (basef);
-	memcpy (curr_field->data, basef->data, basef->size);
-	return curr_field;
+	cob_dyn_field_copy (dst, basef);
 }
 
-cob_field *
-cob_intr_max (const int params, ...)
+void
+cob_intr_max (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	cob_field	*basef;
@@ -5394,13 +5308,11 @@ cob_intr_max (const int params, ...)
 	}
 	va_end (args);
 
-	make_field_entry (basef);
-	memcpy (curr_field->data, basef->data, basef->size);
-	return curr_field;
+	cob_dyn_field_copy (dst, basef);
 }
 
-cob_field *
-cob_intr_midrange (const int params, ...)
+void
+cob_intr_midrange (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*basemin;
 	cob_field	*basemax;
@@ -5418,13 +5330,11 @@ cob_intr_midrange (const int params, ...)
 	d2.scale = 0;
 	cob_decimal_div (&d1, &d2);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_median (const int params, ...)
+void
+cob_intr_median (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	cob_field	**field_alloc;
@@ -5436,9 +5346,8 @@ cob_intr_median (const int params, ...)
 	f = va_arg (args, cob_field *);
 	if (params == 1) {
 		va_end (args);
-		make_field_entry (f);
-		memcpy (curr_field->data, f->data, f->size);
-		return curr_field;
+		cob_dyn_field_copy (dst, f);
+		return;
 	}
 
 	field_alloc = cob_malloc ((size_t)params * sizeof (cob_field *));
@@ -5454,9 +5363,7 @@ cob_intr_median (const int params, ...)
 
 	i = params / 2;
 	if (params % 2) {
-		f = field_alloc[i];
-		make_field_entry (f);
-		memcpy (curr_field->data, f->data, f->size);
+		cob_dyn_field_copy (dst, field_alloc[i]);
 	} else {
 		cob_decimal_set_field (&d1, field_alloc[i-1]);
 		cob_decimal_set_field (&d2, field_alloc[i]);
@@ -5464,15 +5371,13 @@ cob_intr_median (const int params, ...)
 		mpz_set_ui (d2.value, 2UL);
 		d2.scale = 0;
 		cob_decimal_div (&d1, &d2);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		dyn_field_store_decimal (dst, &d1);
 	}
 	cob_free (field_alloc);
-	return curr_field;
 }
 
-cob_field *
-cob_intr_mean (const int params, ...)
+void
+cob_intr_mean (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5483,9 +5388,8 @@ cob_intr_mean (const int params, ...)
 	if (params == 1) {
 		f = va_arg (args, cob_field *);
 		va_end (args);
-		make_field_entry (f);
-		memcpy (curr_field->data, f->data, f->size);
-		return curr_field;
+		cob_dyn_field_copy (dst, f);
+		return;
 	}
 
 	mpz_set_ui (d1.value, 0UL);
@@ -5502,20 +5406,17 @@ cob_intr_mean (const int params, ...)
 	d2.scale = 0;
 	cob_decimal_div (&d1, &d2);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_mod (cob_field *srcfield1, cob_field *srcfield2)
+void
+cob_intr_mod (cob_dyn_field *dst, cob_field *srcfield1, cob_field *srcfield2)
 {
-	return cob_mod_or_rem (srcfield1, srcfield2, 0);
+	cob_mod_or_rem (dst, srcfield1, srcfield2, 0);
 }
 
-cob_field *
-cob_intr_range (const int params, ...)
+void
+cob_intr_range (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*basemin, *basemax;
 	va_list		args;
@@ -5528,19 +5429,17 @@ cob_intr_range (const int params, ...)
 	cob_decimal_set_field (&d2, basemin);
 	cob_decimal_sub (&d1, &d2);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_rem (cob_field *srcfield1, cob_field *srcfield2)
+void
+cob_intr_rem (cob_dyn_field *dst, cob_field *srcfield1, cob_field *srcfield2)
 {
-	return cob_mod_or_rem (srcfield1, srcfield2, 1);
+	cob_mod_or_rem (dst, srcfield1, srcfield2, 1);
 }
 
-cob_field *
-cob_intr_random (const int params, ...)
+void
+cob_intr_random (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5632,9 +5531,8 @@ cob_intr_random (const int params, ...)
 
 	COB_ATTR_INIT (COB_TYPE_NUMERIC_DOUBLE, 20, 9, COB_FLAG_HAVE_SIGN, NULL);
 	COB_FIELD_INIT (sizeof (double), NULL, &attr);
-	make_field_entry (&field);
-	memcpy (curr_field->data, &val, sizeof(val));
-	return curr_field;
+	dyn_field_reshape (dst, &field);
+	memcpy (dst->field.data, &val, sizeof(val));
 }
 
 #define GET_VARIANCE(num_args, args)				\
@@ -5653,20 +5551,18 @@ cob_intr_random (const int params, ...)
 		va_end (args);					\
 	} ONCE_COB
 
-cob_field *
-cob_intr_variance (const int num_args, ...)
+void
+cob_intr_variance (cob_dyn_field *dst, const int num_args, ...)
 {
 	va_list	args;
 
 	GET_VARIANCE (num_args, args);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
-cob_field *
-cob_intr_standard_deviation (const int num_args, ...)
+void
+cob_intr_standard_deviation (cob_dyn_field *dst, const int num_args, ...)
 {
 	va_list		args;
 
@@ -5681,15 +5577,13 @@ cob_intr_standard_deviation (const int num_args, ...)
 
 	cob_decimal_pow (&d1, &d3);
 
-	cob_alloc_field (&d1);
-	(void)cob_decimal_get_field (&d1, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d1);
 }
 
 #undef GET_VARIANCE
 
-cob_field *
-cob_intr_present_value (const int params, ...)
+void
+cob_intr_present_value (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5721,13 +5615,11 @@ cob_intr_present_value (const int params, ...)
 	}
 	va_end (args);
 
-	cob_alloc_field (&d4);
-	(void)cob_decimal_get_field (&d4, curr_field, 0);
-	return curr_field;
+	dyn_field_store_decimal (dst, &d4);
 }
 
-cob_field *
-cob_intr_year_to_yyyy (const int params, ...)
+void
+cob_intr_year_to_yyyy (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	struct tm	*timeptr;
@@ -5760,31 +5652,30 @@ cob_intr_year_to_yyyy (const int params, ...)
 
 	if (year < 0 || year > 99) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	if (!valid_year (current_year)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	maxyear = current_year + interval;
 	if (maxyear < 1700 || maxyear > 9999) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	if (maxyear % 100 >= year) {
 		year += 100 * (maxyear / 100);
 	} else {
 		year += 100 * ((maxyear / 100) - 1);
 	}
-	cob_alloc_set_field_int (year);
-	return curr_field;
+	dyn_field_store_int (dst, year);
 }
 
-cob_field *
-cob_intr_date_to_yyyymmdd (const int params, ...)
+void
+cob_intr_date_to_yyyymmdd (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5814,8 +5705,8 @@ cob_intr_date_to_yyyymmdd (const int params, ...)
 	    || !valid_year (current_year)
 	    || (maxyear < 1700 || maxyear > 9999)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 
 	if (maxyear % 100 >= year) {
@@ -5825,12 +5716,11 @@ cob_intr_date_to_yyyymmdd (const int params, ...)
 	}
 	year *= 10000;
 	year += mmdd;
-	cob_alloc_set_field_int (year);
-	return curr_field;
+	dyn_field_store_int (dst, year);
 }
 
-cob_field *
-cob_intr_day_to_yyyyddd (const int params, ...)
+void
+cob_intr_day_to_yyyyddd (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f;
 	va_list		args;
@@ -5856,19 +5746,19 @@ cob_intr_day_to_yyyyddd (const int params, ...)
 
 	if (year < 0 || year > 999999) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	if (!valid_year (current_year)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	maxyear = current_year + interval;
 	if (maxyear < 1700 || maxyear > 9999) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
-		return curr_field;
+		dyn_field_store_uint (dst, 0);
+		return;
 	}
 	if (maxyear % 100 >= year) {
 		year += 100 * (maxyear / 100);
@@ -5877,8 +5767,7 @@ cob_intr_day_to_yyyyddd (const int params, ...)
 	}
 	year *= 1000;
 	year += days;
-	cob_alloc_set_field_int (year);
-	return curr_field;
+	dyn_field_store_int (dst, year);
 }
 
 static int
@@ -5899,15 +5788,15 @@ get_seconds_past_midnight (void)
 	return seconds;
 }
 
-cob_field*
-cob_intr_seconds_past_midnight (void)
+void
+cob_intr_seconds_past_midnight (cob_dyn_field *dst)
 {
-	cob_alloc_set_field_int (get_seconds_past_midnight ());
-	return curr_field;
+	dyn_field_store_int (dst, get_seconds_past_midnight ());
 }
 
-cob_field *
-cob_intr_seconds_from_formatted_time (cob_field *format_field, cob_field *time_field)
+void
+cob_intr_seconds_from_formatted_time (cob_dyn_field *dst,
+				      cob_field *format_field, cob_field *time_field)
 {
 	struct time_format	time_fmt;
 	cob_decimal	*seconds = &d1;
@@ -5953,19 +5842,16 @@ cob_intr_seconds_from_formatted_time (cob_field *format_field, cob_field *time_f
 
 	seconds_from_formatted_time (time_fmt, time_str, seconds);
 
-	cob_alloc_field (seconds);
-	(void) cob_decimal_get_field (seconds, curr_field, 0);
-
-	return curr_field;
+	dyn_field_store_decimal (dst, seconds);
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
-cob_field *
-cob_intr_locale_date (const int offset, const int length,
+void
+cob_intr_locale_date (cob_dyn_field *dst, const int offset, const int length,
 		      cob_field *srcfield, cob_field *locale_field)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(HAVE_LANGINFO_CODESET)
@@ -6079,17 +5965,16 @@ cob_intr_locale_date (const int offset, const int length,
 		goto derror;
 	}
 #endif
-	cob_alloc_set_field_str (buff, offset, length);
-	return curr_field;
+	dyn_field_store_str (dst, buff, offset, length);
+	return;
 derror:
 #endif
-	cob_alloc_set_field_spaces (10);
+	dyn_field_store_spaces (dst, 10);
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	return curr_field;
 }
 
-cob_field *
-cob_intr_locale_time (const int offset, const int length,
+void
+cob_intr_locale_time (cob_dyn_field *dst, const int offset, const int length,
 		      cob_field *srcfield, cob_field *locale_field)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(HAVE_LANGINFO_CODESET)
@@ -6141,17 +6026,17 @@ cob_intr_locale_time (const int offset, const int length,
 		goto derror;
 	}
 
-	cob_alloc_set_field_str (buff, offset, length);
-	return curr_field;
+	dyn_field_store_str (dst, buff, offset, length);
+	return;
 derror:
 #endif
-	cob_alloc_set_field_spaces (10);
+	dyn_field_store_spaces (dst, 10);
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	return curr_field;
 }
 
-cob_field *
-cob_intr_lcl_time_from_secs (const int offset, const int length,
+void
+cob_intr_lcl_time_from_secs (cob_dyn_field *dst, const int offset,
+			     const int length,
 			     cob_field *srcfield, cob_field *locale_field)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(HAVE_LANGINFO_CODESET)
@@ -6182,17 +6067,16 @@ cob_intr_lcl_time_from_secs (const int offset, const int length,
 		goto derror;
 	}
 
-	cob_alloc_set_field_str (buff, offset, length);
-	return curr_field;
+	dyn_field_store_str (dst, buff, offset, length);
+	return;
 derror:
 #endif
-	cob_alloc_set_field_spaces (10);
+	dyn_field_store_spaces (dst, 10);
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	return curr_field;
 }
 
-cob_field *
-cob_intr_mon_decimal_point (void)
+void
+cob_intr_mon_decimal_point (cob_dyn_field *dst)
 {
 #ifdef	HAVE_LOCALECONV
 	struct lconv	*p;
@@ -6211,23 +6095,22 @@ cob_intr_mon_decimal_point (void)
 	} else {
 		field.size = 1;
 	}
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	if (size) {
-		memcpy (curr_field->data, p->mon_decimal_point, size);
+		memcpy (dst->field.data, p->mon_decimal_point, size);
 	} else {
-		curr_field->size = 0;
-		curr_field->data[0] = 0;
+		dst->field.size = 0;
+		dst->field.data[0] = 0;
 	}
 #else
 	field.size = 1;
-	make_field_entry (&field);
-	curr_field->data[0] = COB_MODULE_PTR->decimal_point;
+	dyn_field_reshape (dst, &field);
+	dst->field.data[0] = COB_MODULE_PTR->decimal_point;
 #endif
-	return curr_field;
 }
 
-cob_field *
-cob_intr_num_decimal_point (void)
+void
+cob_intr_num_decimal_point (cob_dyn_field *dst)
 {
 #ifdef	HAVE_LOCALECONV
 	struct lconv	*p;
@@ -6246,23 +6129,22 @@ cob_intr_num_decimal_point (void)
 	} else {
 		field.size = 1;
 	}
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	if (size) {
-		memcpy (curr_field->data, p->decimal_point, size);
+		memcpy (dst->field.data, p->decimal_point, size);
 	} else {
-		curr_field->size = 0;
-		curr_field->data[0] = 0;
+		dst->field.size = 0;
+		dst->field.data[0] = 0;
 	}
 #else
 	field.size = 1;
-	make_field_entry (&field);
-	curr_field->data[0] = COB_MODULE_PTR->decimal_point;
+	dyn_field_reshape (dst, &field);
+	dst->field.data[0] = COB_MODULE_PTR->decimal_point;
 #endif
-	return curr_field;
 }
 
-cob_field *
-cob_intr_mon_thousands_sep (void)
+void
+cob_intr_mon_thousands_sep (cob_dyn_field *dst)
 {
 #ifdef	HAVE_LOCALECONV
 	struct lconv	*p;
@@ -6281,23 +6163,22 @@ cob_intr_mon_thousands_sep (void)
 	} else {
 		field.size = 1;
 	}
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	if (size) {
-		memcpy (curr_field->data, p->mon_thousands_sep, size);
+		memcpy (dst->field.data, p->mon_thousands_sep, size);
 	} else {
-		curr_field->size = 0;
-		curr_field->data[0] = 0;
+		dst->field.size = 0;
+		dst->field.data[0] = 0;
 	}
 #else
 	field.size = 1;
-	make_field_entry (&field);
-	curr_field->data[0] = COB_MODULE_PTR->decimal_point;
+	dyn_field_reshape (dst, &field);
+	dst->field.data[0] = COB_MODULE_PTR->decimal_point;
 #endif
-	return curr_field;
 }
 
-cob_field *
-cob_intr_num_thousands_sep (void)
+void
+cob_intr_num_thousands_sep (cob_dyn_field *dst)
 {
 #ifdef	HAVE_LOCALECONV
 	struct lconv	*p;
@@ -6316,23 +6197,22 @@ cob_intr_num_thousands_sep (void)
 	} else {
 		field.size = 1;
 	}
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	if (size) {
-		memcpy (curr_field->data, p->thousands_sep, size);
+		memcpy (dst->field.data, p->thousands_sep, size);
 	} else {
-		curr_field->size = 0;
-		curr_field->data[0] = 0;
+		dst->field.size = 0;
+		dst->field.data[0] = 0;
 	}
 #else
 	field.size = 1;
-	make_field_entry (&field);
-	curr_field->data[0] = COB_MODULE_PTR->decimal_point;
+	dyn_field_reshape (dst, &field);
+	dst->field.data[0] = COB_MODULE_PTR->decimal_point;
 #endif
-	return curr_field;
 }
 
-cob_field *
-cob_intr_currency_symbol (void)
+void
+cob_intr_currency_symbol (cob_dyn_field *dst)
 {
 #ifdef	HAVE_LOCALECONV
 	struct lconv	*p;
@@ -6351,44 +6231,41 @@ cob_intr_currency_symbol (void)
 	} else {
 		field.size = 1;
 	}
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	if (size) {
-		memcpy (curr_field->data, p->currency_symbol, size);
+		memcpy (dst->field.data, p->currency_symbol, size);
 	} else {
-		curr_field->size = 0;
-		curr_field->data[0] = 0;
+		dst->field.size = 0;
+		dst->field.data[0] = 0;
 	}
 #else
 	field.size = 1;
-	make_field_entry (&field);
-	curr_field->data[0] = COB_MODULE_PTR->currency_symbol;
+	dyn_field_reshape (dst, &field);
+	dst->field.data[0] = COB_MODULE_PTR->currency_symbol;
 #endif
-	return curr_field;
 }
 
-cob_field *
-cob_intr_test_numval (cob_field *srcfield)
+void
+cob_intr_test_numval (cob_dyn_field *dst, cob_field *srcfield)
 {
-	cob_alloc_set_field_int (cob_check_numval (srcfield, NULL, 0, 0));
-	return curr_field;
+	dyn_field_store_int (dst, cob_check_numval (srcfield, NULL, 0, 0));
 }
 
-cob_field *
-cob_intr_test_numval_c (cob_field *srcfield, cob_field *currency)
+void
+cob_intr_test_numval_c (cob_dyn_field *dst, cob_field *srcfield,
+			cob_field *currency)
 {
-	cob_alloc_set_field_int (cob_check_numval (srcfield, currency, 1, 0));
-	return curr_field;
+	dyn_field_store_int (dst, cob_check_numval (srcfield, currency, 1, 0));
 }
 
-cob_field *
-cob_intr_test_numval_f (cob_field *srcfield)
+void
+cob_intr_test_numval_f (cob_dyn_field *dst, cob_field *srcfield)
 {
-	cob_alloc_set_field_int (cob_check_numval_f (srcfield));
-	return curr_field;
+	dyn_field_store_int (dst, cob_check_numval_f (srcfield));
 }
 
-cob_field *
-cob_intr_lowest_algebraic (cob_field *srcfield)
+void
+cob_intr_lowest_algebraic (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_uli_t	expo;
 	cob_field	field;
@@ -6397,22 +6274,22 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 	case COB_TYPE_ALPHANUMERIC:
 	case COB_TYPE_NATIONAL:
 		COB_FIELD_INIT (COB_FIELD_SIZE (srcfield), NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		break;
 
 	case COB_TYPE_ALPHANUMERIC_EDITED:
 	case COB_TYPE_NATIONAL_EDITED:
 		COB_FIELD_INIT (COB_FIELD_DIGITS (srcfield), NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		break;
 
 	case COB_TYPE_NUMERIC_BINARY:
 	case COB_TYPE_NUMERIC_COMP5:
 		if (!COB_FIELD_HAVE_SIGN (srcfield)) {
-			cob_alloc_set_field_uint (0);
+			dyn_field_store_uint (dst, 0);
 			break;
 		}
-		if (COB_FIELD_REAL_BINARY (srcfield) 
+		if (COB_FIELD_REAL_BINARY (srcfield)
 		|| !COB_FIELD_BINARY_TRUNC (srcfield)) {
 			expo = (cob_uli_t)((COB_FIELD_SIZE (srcfield) * 8U) - 1U);
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
@@ -6423,22 +6300,21 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 		}
 		mpz_neg (d1.value, d1.value);
 		d1.scale = COB_FIELD_SCALE (srcfield);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		dyn_field_store_decimal (dst, &d1);
 		break;
 
 	case COB_TYPE_NUMERIC_FLOAT:
 	case COB_TYPE_NUMERIC_DOUBLE:
 	case COB_TYPE_NUMERIC_L_DOUBLE:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
+		dyn_field_store_uint (dst, 0);
 		break;
 
 	case COB_TYPE_NUMERIC_DISPLAY:
 	case COB_TYPE_NUMERIC_PACKED:
 	case COB_TYPE_NUMERIC_EDITED:
 		if (!COB_FIELD_HAVE_SIGN (srcfield)) {
-			cob_alloc_set_field_uint (0);
+			dyn_field_store_uint (dst, 0);
 			break;
 		}
 		expo = (cob_uli_t)COB_FIELD_DIGITS (srcfield);
@@ -6446,19 +6322,17 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 		mpz_sub_ui (d1.value, d1.value, 1UL);
 		mpz_neg (d1.value, d1.value);
 		d1.scale = COB_FIELD_SCALE (srcfield);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		dyn_field_store_decimal (dst, &d1);
 		break;
 	default:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
+		dyn_field_store_uint (dst, 0);
 		break;
 	}
-	return curr_field;
 }
 
-cob_field *
-cob_intr_highest_algebraic (cob_field *srcfield)
+void
+cob_intr_highest_algebraic (cob_dyn_field *dst, cob_field *srcfield)
 {
 	cob_uli_t	expo;
 	size_t		size;
@@ -6469,16 +6343,16 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 	case COB_TYPE_NATIONAL:
 		size = COB_FIELD_SIZE (srcfield);
 		COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		memset (curr_field->data, 255, size);
+		dyn_field_reshape (dst, &field);
+		memset (dst->field.data, 255, size);
 		break;
 
 	case COB_TYPE_ALPHANUMERIC_EDITED:
 	case COB_TYPE_NATIONAL_EDITED:
 		size = COB_FIELD_DIGITS (srcfield);
 		COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		memset (curr_field->data, 255, size);
+		dyn_field_reshape (dst, &field);
+		memset (dst->field.data, 255, size);
 		break;
 
 	case COB_TYPE_NUMERIC_BINARY:
@@ -6496,15 +6370,14 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 		}
 		mpz_sub_ui (d1.value, d1.value, 1UL);
 		d1.scale = COB_FIELD_SCALE (srcfield);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		dyn_field_store_decimal (dst, &d1);
 		break;
 
 	case COB_TYPE_NUMERIC_FLOAT:
 	case COB_TYPE_NUMERIC_DOUBLE:
 	case COB_TYPE_NUMERIC_L_DOUBLE:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
+		dyn_field_store_uint (dst, 0);
 		break;
 
 	case COB_TYPE_NUMERIC_DISPLAY:
@@ -6514,19 +6387,17 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 		mpz_ui_pow_ui (d1.value, 10UL, expo);
 		mpz_sub_ui (d1.value, d1.value, 1UL);
 		d1.scale = COB_FIELD_SCALE (srcfield);
-		cob_alloc_field (&d1);
-		(void)cob_decimal_get_field (&d1, curr_field, 0);
+		dyn_field_store_decimal (dst, &d1);
 		break;
 	default:
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-		cob_alloc_set_field_uint (0);
+		dyn_field_store_uint (dst, 0);
 		break;
 	}
-	return curr_field;
 }
 
-cob_field *
-cob_intr_locale_compare (const int params, ...)
+void
+cob_intr_locale_compare (cob_dyn_field *dst, const int params, ...)
 {
 	cob_field	*f1;
 	cob_field	*f2;
@@ -6555,7 +6426,7 @@ cob_intr_locale_compare (const int params, ...)
 	va_end (args);
 
 	COB_FIELD_INIT (1, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 #ifdef	HAVE_STRCOLL
 	size = f1->size;
@@ -6596,11 +6467,11 @@ cob_intr_locale_compare (const int params, ...)
 
 	ret = strcoll ((char *)p1, (char *)p2);
 	if (ret < 0) {
-		curr_field->data[0] = '<';
+		dst->field.data[0] = '<';
 	} else if (ret > 0) {
-		curr_field->data[0] = '>';
+		dst->field.data[0] = '>';
 	} else {
-		curr_field->data[0] = '=';
+		dst->field.data[0] = '=';
 	}
 	cob_free (p1);
 	cob_free (p2);
@@ -6611,20 +6482,18 @@ cob_intr_locale_compare (const int params, ...)
 	}
 #endif
 
-	return curr_field;
+	return;
 
 derror:
 	cob_free (p1);
 	cob_free (p2);
 #endif
-	curr_field->data[0] = ' ';
+	dst->field.data[0] = ' ';
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-
-	return curr_field;
 }
 
-cob_field *
-cob_intr_formatted_date (const int offset, const int length,
+void
+cob_intr_formatted_date (cob_dyn_field *dst, const int offset, const int length,
 			 cob_field *format_field, cob_field *days_field)
 {
 	cob_field	field;
@@ -6641,12 +6510,12 @@ cob_intr_formatted_date (const int offset, const int length,
 	/* overflow or less than minimal valid entry -> exception */
 	if (field_length < 7) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	cobglobptr->cob_exception_code = 0;
 	days = cob_get_int (days_field);
@@ -6658,20 +6527,19 @@ cob_intr_formatted_date (const int offset, const int length,
 	format = parse_date_format_string (format_str);
 	format_date (format, days, buff);
 
-	memcpy (curr_field->data, buff, field_length);
+	memcpy (dst->field.data, buff, field_length);
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', curr_field->size);
-	return curr_field;
+	memset (dst->field.data, ' ', dst->field.size);
 }
 
-cob_field *
-cob_intr_formatted_time (const int offset, const int length,
+void
+cob_intr_formatted_time (cob_dyn_field *dst, const int offset, const int length,
 			 const int params, ...)
 {
 	va_list		args;
@@ -6691,7 +6559,7 @@ cob_intr_formatted_time (const int offset, const int length,
 
 	if (!(params == 3 || params == 4)) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
@@ -6718,7 +6586,7 @@ cob_intr_formatted_time (const int offset, const int length,
 	whole_seconds = cob_get_int (time_field);
 	if (!valid_time (whole_seconds)) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
@@ -6728,13 +6596,13 @@ cob_intr_formatted_time (const int offset, const int length,
 	/* overflow or less than minimal valid entry -> exception */
 	if (field_length < 6) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
 	if (!cob_valid_time_format (format_str, COB_MODULE_PTR->decimal_point)) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
@@ -6749,7 +6617,7 @@ cob_intr_formatted_time (const int offset, const int length,
 		if (try_get_valid_offset_time (offset_time_field,
 					       &offset_time)) {
 			COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-			make_field_entry (&field);
+			dyn_field_reshape (dst, &field);
 			goto invalid_args;
 		} else {
 			offset_time_ptr = &offset_time;
@@ -6757,26 +6625,25 @@ cob_intr_formatted_time (const int offset, const int length,
 	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	format_time (format, whole_seconds, fractional_seconds, offset_time_ptr,
 		     buff);
 
-	memcpy (curr_field->data, buff, field_length);
+	memcpy (dst->field.data, buff, field_length);
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', curr_field->size);
-	return curr_field;
+	memset (dst->field.data, ' ', dst->field.size);
 }
 
 /* FUNCTION FORMATTED-DATETIME */
-cob_field *
-cob_intr_formatted_datetime (const int offset, const int length,
-			     const int params, ...)
+void
+cob_intr_formatted_datetime (cob_dyn_field *dst, const int offset,
+			     const int length, const int params, ...)
 {
 	va_list		args;
 	cob_field	*fmt_field;
@@ -6800,7 +6667,7 @@ cob_intr_formatted_datetime (const int offset, const int length,
 
 	if (!(params == 4 || params == 5)) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
@@ -6825,12 +6692,12 @@ cob_intr_formatted_datetime (const int offset, const int length,
 	/* overflow or less than minimal valid entry -> exception */
 	if (field_length < 14) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	cobglobptr->cob_exception_code = 0;
 
@@ -6871,21 +6738,20 @@ cob_intr_formatted_datetime (const int offset, const int length,
 	format_datetime (date_fmt, time_fmt, days, whole_seconds,
 			 fractional_seconds, offset_time_ptr, buff);
 
-	memcpy (curr_field->data, buff, (size_t) field_length);
+	memcpy (dst->field.data, buff, (size_t) field_length);
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', curr_field->size);
-	return curr_field;
+	memset (dst->field.data, ' ', dst->field.size);
 }
 
 /* FUNCTION TEST-FORMATTED-DATETIME */
-cob_field *
-cob_intr_test_formatted_datetime (cob_field *format_field,
+void
+cob_intr_test_formatted_datetime (cob_dyn_field *dst, cob_field *format_field,
 				  cob_field *datetime_field)
 {
 	char	datetime_format_str[COB_DATETIMESTR_LEN] = { '\0' };
@@ -6970,21 +6836,21 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 		error_pos = test_formatted_date (parse_date_format_string (date_format_str),
 						 formatted_date, !time_present);
 		if (error_pos != 0) {
-			cob_alloc_set_field_uint (error_pos);
-			return curr_field;
+			dyn_field_store_uint (dst, error_pos);
+			return;
 		}
 	}
 	if (date_present && time_present
 	 && formatted_datetime[formatted_date_len] != 'T') {
-		cob_alloc_set_field_uint (time_part_offset);
-		return curr_field;
+		dyn_field_store_uint (dst, time_part_offset);
+		return;
 	}
 	if (time_present) {
 		error_pos = test_formatted_time (parse_time_format_string (time_format_str),
 						 formatted_time, COB_MODULE_PTR->decimal_point);
 		if (error_pos != 0) {
-			cob_alloc_set_field_uint (time_part_offset + error_pos);
-			return curr_field;
+			dyn_field_store_uint (dst, time_part_offset + error_pos);
+			return;
 		}
 	}
 
@@ -6998,21 +6864,20 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 				break;
 			}
 		}
-		cob_alloc_set_field_uint (pos - start + 1);
-		return curr_field;
+		dyn_field_store_uint (dst, pos - start + 1);
+		return;
 	}
 
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
-cob_field *
-cob_intr_integer_of_formatted_date (cob_field *format_field,
+void
+cob_intr_integer_of_formatted_date (cob_dyn_field *dst, cob_field *format_field,
 				    cob_field *date_field)
 {
 	char	original_format_str[COB_DATETIMESTR_LEN] = { '\0' };
@@ -7058,21 +6923,20 @@ cob_intr_integer_of_formatted_date (cob_field *format_field,
 		goto invalid_args;
 	}
 
-	cob_alloc_set_field_uint (integer_of_formatted_date (date_fmt, date_str));
-	return curr_field;
+	dyn_field_store_uint (dst, integer_of_formatted_date (date_fmt, date_str));
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	cob_alloc_set_field_uint (0);
-	return curr_field;
+	dyn_field_store_uint (dst, 0);
 }
 
 /* implementation of FUNCTION FORMATTED-CURRENT-DATE,
    using the actual current date adjusted/replaced with COB_CURRENT_DATE
    with a specified formatting */
-cob_field *
-cob_intr_formatted_current_date (const int offset, const int length,
-				 cob_field *format_field)
+void
+cob_intr_formatted_current_date (cob_dyn_field *dst, const int offset,
+				 const int length, cob_field *format_field)
 {
 	cob_field	field;
 	char		format_str[COB_DATETIMESTR_LEN] = { '\0' };
@@ -7091,12 +6955,12 @@ cob_intr_formatted_current_date (const int offset, const int length,
 	/* overflow or less than minimal valid entry -> exception */
 	if (field_length < 14) {
 		COB_FIELD_INIT (0, NULL, &const_alpha_attr);
-		make_field_entry (&field);
+		dyn_field_reshape (dst, &field);
 		goto invalid_args;
 	}
 
 	COB_FIELD_INIT (field_length, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 
 	cobglobptr->cob_exception_code = 0;
 
@@ -7112,17 +6976,16 @@ cob_intr_formatted_current_date (const int offset, const int length,
 
 	/* Format current date */
 	format_current_date (date_fmt, time_fmt, formatted_date);
-	memcpy (curr_field->data, formatted_date, field_length);
+	memcpy (dst->field.data, formatted_date, field_length);
 
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
+	return;
 
  invalid_args:
 	cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
-	memset (curr_field->data, ' ', curr_field->size);
-	return curr_field;
+	memset (dst->field.data, ' ', dst->field.size);
 }
 
 /**
@@ -7131,8 +6994,8 @@ cob_intr_formatted_current_date (const int offset, const int length,
   Return the nul byte terminated "string" length of data
   addressed by the given pointer.
 **/
-cob_field *
-cob_intr_content_length (cob_field *srcfield)
+void
+cob_intr_content_length (cob_dyn_field *dst, cob_field *srcfield)
 {
 	unsigned char	*pointed;
 	cob_u32_t	val = 0;
@@ -7149,8 +7012,7 @@ cob_intr_content_length (cob_field *srcfield)
 	} else {
 		cob_set_exception (COB_EC_DATA_PTR_NULL);
 	}
-	cob_alloc_set_field_uint (val);
-	return curr_field;
+	dyn_field_store_uint (dst, val);
 }
 
 /**
@@ -7161,8 +7023,9 @@ cob_intr_content_length (cob_field *srcfield)
   If the source pointer is null, points to null or an empty string,
   return a zero length space.
 **/
-cob_field *
-cob_intr_content_of (const int offset, const int length, const int params, ...)
+void
+cob_intr_content_of (cob_dyn_field *dst, const int offset, const int length,
+		     const int params, ...)
 {
 	size_t          size = 0;
 	unsigned char   *pointed;
@@ -7208,29 +7071,29 @@ cob_intr_content_of (const int offset, const int length, const int params, ...)
 	if (size == 0) {
 		/* note: this is no error, but a special case for this intrinsic */
 		COB_FIELD_INIT (1, NULL, &const_alpha_attr);
-		make_field_entry (&field);
-		curr_field->data[0] = ' ';
-		curr_field->size = 0;
-		return curr_field;
+		dyn_field_reshape (dst, &field);
+		dst->field.data[0] = ' ';
+		dst->field.size = 0;
+		return;
 	}
 
 	COB_FIELD_INIT (size, NULL, &const_alpha_attr);
-	make_field_entry (&field);
+	dyn_field_reshape (dst, &field);
 	/* Testing for memory access permissions is canonically: */
 	/*   open fake pipe, use write and test for -1 and EFAULT */
 	/* Not used here, performance hit versus programmer error */
-	memcpy (curr_field->data, pointed, size);
+	memcpy (dst->field.data, pointed, size);
 	if (offset > 0) {
-		calc_ref_mod (curr_field, offset, length);
+		calc_ref_mod (&dst->field, offset, length);
 	}
-	return curr_field;
 }
 
 /* RXWRXW - To be implemented */
 
-cob_field *
-cob_intr_boolean_of_integer (cob_field *f1, cob_field *f2)
+void
+cob_intr_boolean_of_integer (cob_dyn_field *dst, cob_field *f1, cob_field *f2)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (f1);
 	COB_UNUSED (f2);
 
@@ -7239,9 +7102,10 @@ cob_intr_boolean_of_integer (cob_field *f1, cob_field *f2)
 
 /* implementation of FUNCTION CHAR-NATIONAL - character from ordinal
    FIXME: Not implemented, Should use the program's national program collating sequence! */
-cob_field *
-cob_intr_char_national (cob_field *srcfield)
+void
+cob_intr_char_national (cob_dyn_field *dst, cob_field *srcfield)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (srcfield);
 
 	error_not_implemented ();
@@ -7249,10 +7113,11 @@ cob_intr_char_national (cob_field *srcfield)
 
 /* implementation of FUNCTION DISPLAY-OF - alphanumeric for national character
    FIXME: Not implemented! */
-cob_field *
-cob_intr_display_of (const int offset, const int length,
+void
+cob_intr_display_of (cob_dyn_field *dst, const int offset, const int length,
 		     const int params, ...)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (offset);
 	COB_UNUSED (length);
 	COB_UNUSED (params);
@@ -7263,32 +7128,39 @@ cob_intr_display_of (const int offset, const int length,
 /* implementation of FUNCTION EXCEPTION-FILE-N
    national representation for filename that had an error last
    FIXME: Not implemented! */
-cob_field *
-cob_intr_exception_file_n (void)
+void
+cob_intr_exception_file_n (cob_dyn_field *dst)
 {
+	COB_UNUSED (dst);
+
 	error_not_implemented ();
 }
 
 /* implementation of FUNCTION EXCEPTION-LOCATION-N
    national representation for location that had an error last
    FIXME: Not implemented! */
-cob_field *
-cob_intr_exception_location_n (void)
+void
+cob_intr_exception_location_n (cob_dyn_field *dst)
 {
+	COB_UNUSED (dst);
+
 	error_not_implemented ();
 }
 
-cob_field *
-cob_intr_integer_of_boolean (cob_field *srcfield)
+void
+cob_intr_integer_of_boolean (cob_dyn_field *dst, cob_field *srcfield)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (srcfield);
 
 	error_not_implemented ();
 }
 
-cob_field *
-cob_intr_national_of (const int offset, const int length, const int params, ...)
+void
+cob_intr_national_of (cob_dyn_field *dst, const int offset, const int length,
+		      const int params, ...)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (offset);
 	COB_UNUSED (length);
 	COB_UNUSED (params);
@@ -7296,9 +7168,10 @@ cob_intr_national_of (const int offset, const int length, const int params, ...)
 	error_not_implemented ();
 }
 
-cob_field *
-cob_intr_standard_compare (const int params, ...)
+void
+cob_intr_standard_compare (cob_dyn_field *dst, const int params, ...)
 {
+	COB_UNUSED (dst);
 	COB_UNUSED (params);
 
 	error_not_implemented ();
@@ -7309,6 +7182,8 @@ cob_intr_standard_compare (const int params, ...)
 void
 cob_exit_intrinsic (void)
 {
+	cob_dyn_field_free (&indirect_field);
+
 	if (set_cob_sqrt_two) {
 		mpf_clear (cob_sqrt_two);
 	}
@@ -7340,37 +7215,12 @@ cob_exit_intrinsic (void)
 
 	mpz_clear (cob_mpzt);
 	mpz_clear (cob_mexp);
-
-	if (calc_base) {
-		struct calc_struct	*calc_temp = calc_base;
-		cob_u32_t		i;
-		for (i = 0; i < COB_DEPTH_LEVEL; ++i, ++calc_temp) {
-			if (calc_temp->calc_field.data) {
-				cob_free (calc_temp->calc_field.data);
-			}
-		}
-		cob_free (calc_base);
-	}
 }
 
 void
 cob_init_intrinsic (cob_global *lptr)
 {
-	struct calc_struct	*calc_temp;
-	cob_u32_t		i;
-
 	cobglobptr = lptr;
-
-	move_field = NULL;
-	curr_entry = 0;
-	curr_field = NULL;
-	calc_base = cob_malloc (COB_DEPTH_LEVEL * sizeof(struct calc_struct));
-	calc_temp = calc_base;
-	for (i = 0; i < COB_DEPTH_LEVEL; ++i, ++calc_temp) {
-		calc_temp->calc_field.data = cob_malloc ((size_t)256);
-		calc_temp->calc_field.size = 256;
-		calc_temp->calc_size = 256;
-	}
 
 	/* mpf_init2 length = ceil (log2 (10) * strlen (x)) */
 

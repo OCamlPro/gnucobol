@@ -2172,6 +2172,7 @@ static void
 format_field (cob_screen *s)
 {
 	cob_field	field;
+	cob_dyn_field	num = {{ 0 }};
 	size_t		size = s->field->size;
 	unsigned char	*data;
 
@@ -2185,11 +2186,14 @@ format_field (cob_screen *s)
 	COB_FIELD_INIT (size, data, s->field->attr);
 
 	if (COB_FIELD_IS_NUMERIC (s->field)) {
-		cob_move (cob_intr_numval (&field), s->field);
+		cob_intr_numval (&num, &field);
+		cob_move (&num.field, s->field);
 	} else if (field.attr->type == COB_TYPE_NUMERIC_EDITED) {
-		cob_move (cob_intr_numval_c (&field, NULL), s->field);
+		cob_intr_numval_c (&num, &field, NULL);
+		cob_move (&num.field, s->field);
 	}
 
+	cob_dyn_field_free (&num);
 	cob_free (data);
 
 	refresh_field (s);

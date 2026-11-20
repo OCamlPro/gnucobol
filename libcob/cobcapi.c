@@ -584,15 +584,20 @@ cob_put_field_str (const cob_field *dst, const char *str)
 	wrk.data = (unsigned char *)str;
 
 	if (COB_FIELD_IS_NUMERIC (dst)) {
+        cob_dyn_field num = {{0}};
 		if (COB_FIELD_TYPE (dst) & COB_TYPE_NUMERIC_FLOAT
 		 || COB_FIELD_TYPE (dst) & COB_TYPE_NUMERIC_DOUBLE) {
 			if (cob_check_numval_f (&wrk)) return 1;
-			wrk = *cob_intr_numval_f (&wrk);
+			cob_intr_numval_f (&num, &wrk);
 		} else {
 			if (cob_check_numval (&wrk, NULL, 0, 1)) return 1;
-			wrk = *cob_intr_numval (&wrk);
+			cob_intr_numval (&num, &wrk);
 		}
+		cob_move (&num.field, (cob_field *)dst);
+		cob_dyn_field_free (&num);
+		return 0;
 	}
+	
 	cob_move (&wrk, (cob_field *)dst);
 	return 0;
 }
