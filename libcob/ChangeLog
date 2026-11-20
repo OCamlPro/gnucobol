@@ -16,6 +16,8 @@
 	  V(B)ISAM bug: ISEQUAL gives EBADFILE instead of ENOREC)
 	* fileio.c (indexed_start): START <= and START < return status 23 if no
 	  record is before the key (logic bug: missing check)
+	* fileio.c (indexed_read_next): after START <=, READ NEXT goes back if the
+	  record found is after the key (logic bug: missing check)
 
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 

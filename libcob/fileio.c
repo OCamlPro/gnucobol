@@ -5351,7 +5351,8 @@ indexed_read_next (cob_file *f, const int read_opts)
 					}
 					break;
 				case COB_LE:
-					domoveback = 0;
+					/* logic bug fix: go back if the record found is after the key */
+					domoveback = indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) > 0;
 					while (ISERRNO == 0
 					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
