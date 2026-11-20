@@ -653,6 +653,10 @@ Warn if implicitly defined data items are used.
 @comment{TODO: Define "dangling".}
 Warn dangling @code{LINKAGE} items. This is @emph{not} set with @option{-Wall}.
 
+@item -Wmove-alnum-to-num
+Warn about @code{MOVE} of an alphanumeric item to a numeric item.
+This is @emph{not} set with @option{-Wall} or @option{-Wextra}.
+
 @item -Wobsolete
 Warn if obsolete features are used.
 

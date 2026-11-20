@@ -370,6 +370,8 @@ extern const size_t		cb_exception_table_len;
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
+#undef	CB_ERRWARNDEF
+#undef	CB_EXPLWARNDEF
 
 #undef	CB_OPTIM_DEF
 
@@ -404,6 +406,7 @@ extern int cb_old_trace;
 #define	CB_ONWARNDEF(opt,name,doc)	opt,
 #define	CB_NOWARNDEF(opt,name,doc)	opt,
 #define	CB_ERRWARNDEF(opt,name,doc)	opt,
+#define	CB_EXPLWARNDEF(opt,name,doc)	opt,
 enum cb_warn_opt
 {
 	COB_WARNOPT_NONE = 0,
@@ -414,6 +417,7 @@ enum cb_warn_opt
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
 #undef	CB_ERRWARNDEF
+#undef	CB_EXPLWARNDEF
 
 #define COBC_WARN_FILLER  cb_warn_filler
 

@@ -177,11 +177,16 @@ cobc_print_usage_warnings (void)
 	puts (_("                        * NOT set with -Wall"));
 #define	CB_ERRWARNDEF(opt,name,doc)		\
 	puts (doc);
+#define	CB_EXPLWARNDEF(opt,name,doc)		\
+	puts (doc);							\
+	/* TRANSLATORS: This msgid is appended to msgid for -Wmove-alnum-to-num and others */ \
+	puts (_("                        * NOT set with -Wall or -Wextra"));
 #include "warning.def"
 #undef	CB_WARNDEF
 #undef	CB_ONWARNDEF
 #undef	CB_NOWARNDEF
 #undef	CB_ERRWARNDEF
+#undef	CB_EXPLWARNDEF
 	puts (_("  -fdiagnostics-plain-output\tmake diagnostic output as plain as possible"));
 	puts (_("  -Werror               treat all warnings as errors"));
 	puts (_("  -Wno-error            don't treat warnings as errors"));

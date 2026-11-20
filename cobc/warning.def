@@ -27,6 +27,9 @@
 /* Do not include warning with -Wall, only with -Wextra (or old: -W) */
 /* CB_NOWARNDEF (var, name, doc) */
 
+/* Only active if explicitly requested, not with -Wall or -Wextra */
+/* CB_EXPLWARNDEF (var, name, doc) */
+
 CB_WARNDEF (cb_warn_additional, "additional",
 	_("  -Wadditional          additional warnings only raised with -Wall"))
 
@@ -65,6 +68,9 @@ CB_NOWARNDEF (cb_warn_pos_overlap, "possible-overlap",
 
 CB_WARNDEF (cb_warn_parentheses, "parentheses",
 	_("  -Wparentheses         warn if parentheses are omitted around AND within OR"))
+
+CB_EXPLWARNDEF (cb_warn_move_alnum_to_num, "move-alnum-to-num",
+	_("  -Wmove-alnum-to-num   warn about MOVE of an alphanumeric item to a numeric item"))
 
 CB_NOWARNDEF (cb_warn_strict_typing, "strict-typing",
 	_("  -Wstrict-typing       warn strictly about type mismatch, even when same size"))
