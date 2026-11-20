@@ -5335,6 +5335,12 @@ indexed_read_next (cob_file *f, const int read_opts)
 					}
 					if (domoveback) {
 						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
+						if (ISERRNO == ENOCURR) {
+							/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+							   after ISNEXT reached the last record */
+							isread (fh->isfd, (void *)f->record->data, ISLAST);
+							isread (fh->isfd, (void *)f->record->data, ISPREV);
+						}
 					}
 					break;
 				case COB_LT:
@@ -5412,6 +5418,12 @@ indexed_read_next (cob_file *f, const int read_opts)
 						/* wrong libcob assumption: a failed ISNEXT does not move
 						   the position, stay on the last record */
 						isread (fh->isfd, (void *)f->record->data, ISERRNO == 0 ? ISPREV : ISLAST);
+						if (ISERRNO == ENOCURR) {
+							/* workaround for V(B)ISAM bug: ISPREV fails (ENOCURR)
+							   after ISNEXT reached the last record */
+							isread (fh->isfd, (void *)f->record->data, ISLAST);
+							isread (fh->isfd, (void *)f->record->data, ISPREV);
+						}
 					}
 					break;
 				case COB_LT:
