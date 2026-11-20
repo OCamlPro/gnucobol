@@ -1,4 +1,9 @@
 
+2026-11-20  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (indexed_read_next): after START, no walk over equal keys if no
+	  duplicates (wrong libcob assumption: a failed read moves the position)
+
 2026-11-09  David Declerck <david.declerck@ocamlpro.com>
 
 	* common.c (win32_exn_handler, win32_exn_to_signal) [_WIN32]: new,

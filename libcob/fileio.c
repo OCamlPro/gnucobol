@@ -5313,7 +5313,10 @@ indexed_read_next (cob_file *f, const int read_opts)
 				switch (fh->startcond) {
 				case COB_GE:
 					domoveback = 0;
+					/* wrong libcob assumption: a failed ISNEXT or ISPREV does not
+					   move the position, so no walk if no duplicates */
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISPREV);
 						domoveback = 1;
@@ -5325,6 +5328,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 				case COB_LE:
 					domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
@@ -5399,6 +5403,7 @@ indexed_read_next (cob_file *f, const int read_opts)
 					else
 						domoveback = 0;
 					while (ISERRNO == 0
+					 && (fh->key[f->curkey].k_flags & ISDUPS)
 					 && indexed_cmpkey(fh, f->record->data, f->curkey, fh->partial_key_length) == 0) {
 						isread (fh->isfd, (void *)f->record->data, ISNEXT);
 						domoveback = 1;
