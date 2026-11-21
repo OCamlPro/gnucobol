@@ -12557,9 +12557,11 @@ AT_DATA([prog.cob], [
       *> doesn't exist there...
            CALL "SUB" USING '0'
               ON EXCEPTION CONTINUE.
-      *> go by variable
+      *> go by variable, twice to check for mem-leak bug #1304
            CALL MYRTN     USING 'X'.
+           call myrtn     using 'x'.
            CALL "DIR/SUB" USING 'Y'.
+           call "DIR/SUB" USING 'y'.
       *> as it is already loaded - should work as-is
            CALL "SUB" USING 'Z'.
            CANCEL "SUB"
@@ -12587,13 +12589,17 @@ AT_CHECK([mkdir DIR], [0], [], [])
 AT_CHECK([$COMPILE_MODULE sub.cob -o DIR/SUB.$COB_MODULE_EXT], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
+SUB GOT x
 SUB GOT Y
+SUB GOT y
 SUB GOT Z
 SUB GOT 0
 ], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=Y COB_PROF_ENABLE=0 $COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
+SUB GOT x
 SUB GOT Y
+SUB GOT y
 SUB GOT Z
 ], [])
 

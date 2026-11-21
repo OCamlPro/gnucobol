@@ -1290,7 +1290,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	/* Search the cache */
 	p = lookup (entry);
 	if (p) {
-		return p;
+		goto ccf_exit;
 	}
 
 	/* Check if system routine */
@@ -1300,26 +1300,24 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 		while (psyst->syst_name) {
 			if (psyst->syst_hash_val == entry_hash
 			 && !strcmp (psyst->syst_name, entry)) {
-				if (dirent) {
-					cob_free (dirent);
-				}
-				return psyst->syst_call.funcvoid;
+				p = psyst->syst_call.funcvoid;
+				goto ccf_exit;
 			}
 			++psyst;
 		}
 	}
 
 	p = cob_resolve_internal (entry, dirent, fold_case, COB_MODULE_TYPE_PROGRAM, 0);
-	if (dirent) {
-		cob_free (dirent);
-	}
 	if (unlikely(!p)) {
 		if (errind) {
 			cob_call_error ();
 		} else {
 			cob_set_exception (COB_EC_PROGRAM_NOT_FOUND);
-			return NULL;
 		}
+	}
+ccf_exit:
+	if (dirent) {
+		cob_free (dirent);
 	}
 	return p;
 }

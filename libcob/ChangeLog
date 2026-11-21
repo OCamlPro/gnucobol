@@ -1,4 +1,9 @@
 
+2026-11-21  Simon Sobisch <simonsobisch@gnu.org>
+
+	* call.c (cob_call_field): fix leak of directory-path on re-execution
+	  bug #1304
+
 2026-11-17  Simon Sobisch <simonsobisch@gnu.org>
 
 	speedup environment handling
