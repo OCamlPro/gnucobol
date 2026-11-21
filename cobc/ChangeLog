@@ -1,4 +1,12 @@
 
+2026-11-20  David Declerck <david.declerck@ocamlpro.com>
+	    Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
+
+	* warning.def: new CB_EXPLWARNDEF for warnings only enabled explicitly
+	* cobc.h, cobc.c, error.c, help.c: handle CB_EXPLWARNDEF
+	* warning.def: new warning -Wmove-alnum-to-num (CB_EXPLWARNDEF)
+	* typeck.c (validate_move): raise it on MOVE of alphanumeric to numeric
+
 2026-11-12  Simon Sobisch <simonsobisch@gnu.org>
 
 	* typeck.c, tree.h, parser.y (cb_setup_prototype): renamed + moved from

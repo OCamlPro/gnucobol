@@ -757,3 +757,35 @@ prog.cob:27: error: invalid MOVE statement
 
 AT_CLEANUP
 
+
+AT_SETUP([MOVE alphanumeric to numeric: -Wmove-alnum-to-num])
+AT_KEYWORDS([move warning])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 SRC-X  PIC XX VALUE "12".
+       01 DST-9  PIC 99.
+       PROCEDURE DIVISION.
+           MOVE SRC-X TO DST-9.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE_ONLY -Wall -Wextra prog.cob], [0], [], [])
+
+AT_CHECK([$COMPILE_ONLY -Wmove-alnum-to-num prog.cob], [0], [],
+[prog.cob:9: warning: MOVE of alphanumeric item to numeric item
+prog.cob:6: note: 'SRC-X' defined here as PIC XX
+prog.cob:7: note: 'DST-9' defined here as PIC 99
+])
+
+AT_CHECK([$COMPILE_ONLY -Werror -Wmove-alnum-to-num prog.cob], [1], [],
+[prog.cob:9: error: MOVE of alphanumeric item to numeric item
+prog.cob:6: note: 'SRC-X' defined here as PIC XX
+prog.cob:7: note: 'DST-9' defined here as PIC 99
+])
+
+AT_CLEANUP
+
