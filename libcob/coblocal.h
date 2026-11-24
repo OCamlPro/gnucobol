@@ -141,12 +141,6 @@ Note: also defined together with __clang__ in both frontends:
 /* Stacked field depth */
 #define COB_DEPTH_LEVEL		32U
 
-/* Not-A-Number */
-#define COB_DECIMAL_NAN		-32768
-
-/* Infinity */
-#define COB_DECIMAL_INF		-32767
-
 /* GMP decimal default */
 #define COB_MPZ_DEF		1024UL
 
@@ -154,7 +148,8 @@ Note: also defined together with __clang__ in both frontends:
 #define COB_MPF_PREC		2048UL
 
 /* Complex calculation cutoff value */
-/* This MUST be <= COB_MPF_PREC */
+/* This MUST be <= COB_MPF_PREC
+   and should be a multiple of 8 */
 #define COB_MPF_CUTOFF		1024UL
 
 
@@ -288,6 +283,13 @@ Note: also defined together with __clang__ in both frontends:
     #define COB_TLS	static	/* fallback definition */
 #endif
 
+/* Dynamic linker symbol visibility policy */
+enum cob_load_visibility {
+	COB_LOAD_VISIBILITY_LOCAL_PREFERRED = 0,
+	COB_LOAD_VISIBILITY_GLOBAL = 1,
+	COB_LOAD_VISIBILITY_LOCAL_ONLY = 2
+};
+
 /* Global settings structure */
 
 typedef struct __cob_settings {
@@ -313,7 +315,7 @@ typedef struct __cob_settings {
 
 	/* call.c */
 	int	cob_physical_cancel;	/* 0 "= "logical only" (default), 1 "also unload", -1 "never unload" */
-	unsigned int	cob_load_global; /* hint for dynamic linker to make symbols available 0=global, 1=local */
+	enum cob_load_visibility	cob_load_visibility; /* Dynamic linker symbol visibility policy */
 	unsigned int	name_convert;
 	char		*cob_preload_str;
 	char		*cob_library_path;
@@ -483,6 +485,7 @@ struct config_tbl {
 
 /* Local function prototypes */
 COB_HIDDEN void		cob_init_numeric	(cob_global *);
+COB_HIDDEN unsigned char	*cob_param_low_byte	(const int, const void *);
 COB_HIDDEN void		cob_init_cconv		(cob_global *);
 COB_HIDDEN void		cob_init_termio		(cob_global *, cob_settings *);
 COB_HIDDEN void		cob_init_fileio		(cob_global *, cob_settings *);
@@ -603,6 +606,7 @@ COB_HIDDEN int	cob_debug_dump		(void *mem, int len);
          as these parts should be surrounded by #ifdef COB_DEBUG_LOG */
 #endif
 COB_HIDDEN FILE			*cob_get_dump_file	(void);
+COB_HIDDEN int			cob_dump_protected	(void (*) (void *), void *);
 
 
 #if 0 /* currently not used */
@@ -634,7 +638,8 @@ cob_max_int (const int x, const int y)
 COB_HIDDEN int		cob_cmps	(const unsigned char *, const unsigned char *,
 					 const size_t, const unsigned char *);
 
-COB_HIDDEN FILE *	cob_open_logfile (const char *filename);
+COB_HIDDEN FILE *	cob_open_logfile (const char *);
+COB_HIDDEN void		cob_flush_if_not_disabled (FILE *, const char *);
 
 /* Whether we are in testsuite mode */
 COB_HIDDEN int cob_is_test;

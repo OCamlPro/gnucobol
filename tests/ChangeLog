@@ -1,4 +1,8 @@
 
+2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* perf_aggregate.sh: skip binary files, prefer awk over external bc binary
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* perf_stat.sh, perf_record.sh: new scripts based on functions previously
@@ -22,6 +26,11 @@
 	  use sed to adjust the generated sources exporting at_group for use with
 	  FPROFSUFFIX and others
 	* atlocal_win: merged FPROFSUFFIX and other minor things from atlocal.in 
+
+2026-05-06  Saurabh Kumar <developer.saurabh@outlook.com>
+
+	* testsuite.at, Makefile.am, testsuite.src/syn_oo.at: new syntax checks for
+	  object-orientation constructs
 
 2025-12-04  Simon Sobisch <simonsobisch@gnu.org>
 

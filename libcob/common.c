@@ -443,6 +443,16 @@ static int		return_jmp_buffer_set = 0;
 volatile sig_atomic_t	sig_is_handled = 0;
 #endif
 
+/* Dump recovery (skipping a faulting field), see cob_dump_protected:
+   Windows x64/arm64: the exception handler restores a saved context,
+   else setjmp/longjmp, unless COB_WITHOUT_JMP (then no recovery) */
+#if defined (_WIN32) && !defined (_M_IX86) && !defined (__i386__)
+#define DUMP_RECOVERY_CONTEXT
+#elif !defined (COB_WITHOUT_JMP)
+#define DUMP_RECOVERY_SETJMP
+static jmp_buf		dump_env;
+#endif
+
 /* Function Pointer for external signal handling */
 static void		(*cob_ext_sighdl) (int) = NULL;
 
@@ -466,7 +476,7 @@ static const int		cob_exception_tab_code[] = {
 	0		/* COB_EC_MAX */
 };
 
-#undef	COB_EXCEPTION
+#undef COB_EXCEPTION
 
 #define EXCEPTION_TAB_SIZE	sizeof (cob_exception_tab_code) / sizeof (int)
 
@@ -528,6 +538,14 @@ static struct config_enum never[] = {{"never", "!"}, {NULL, NULL}};
 static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALSE", "9"}, {"BEEP", "0"}, {NULL, NULL}};
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
+#ifndef _WIN32
+static struct config_enum loadopts[] = {
+	{"LOCAL_PREFERRED", "0"},
+	{"GLOBAL", "1"},
+	{"LOCAL_ONLY", "2"},
+	{NULL, NULL}
+};
+#endif
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
@@ -550,7 +568,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
 #ifndef _WIN32
-	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+	{"COB_LOAD_VISIBILITY", "load_visibility", "0", loadopts, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_load_visibility)},
 #endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
@@ -968,6 +986,15 @@ cob_terminate_routines (void)
 	 && cobsetptr->cob_display_punch_filename) {
 		fclose (cobsetptr->cob_display_punch_file);
 		cobsetptr->cob_display_punch_file = NULL;
+	}
+	/* close print file if configured as non-safe
+	   and by that kept open (commonly that file would be external) */
+	if (cobsetptr->cob_display_print_file
+	 && cobsetptr->cob_display_print_filename
+	 && cobsetptr->cob_display_print_filename[0] == '!'
+	 && cobsetptr->cob_display_print_filename[1]) {
+		fclose (cobsetptr->cob_display_print_file);
+		cobsetptr->cob_display_print_file = NULL;
 	}
 
 	cob_exit_screen ();
@@ -1472,6 +1499,160 @@ cob_get_sig_description (int sig)
 	return signal_entry.description;
 }
 
+#if defined (_WIN32)
+
+/* Map Win32 exception codes to POSIX signals */
+static int
+win32_exn_to_signal (DWORD code)
+{
+	switch (code) {
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_IN_PAGE_ERROR:
+	case EXCEPTION_STACK_OVERFLOW:
+	case EXCEPTION_DATATYPE_MISALIGNMENT:
+		return SIGSEGV;
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_INT_OVERFLOW:
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	case EXCEPTION_FLT_OVERFLOW:
+	case EXCEPTION_FLT_UNDERFLOW:
+	case EXCEPTION_FLT_INVALID_OPERATION:
+	case EXCEPTION_FLT_DENORMAL_OPERAND:
+	case EXCEPTION_FLT_INEXACT_RESULT:
+	case EXCEPTION_FLT_STACK_CHECK:
+		return SIGFPE;
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	case EXCEPTION_PRIV_INSTRUCTION:
+		return SIGILL;
+	default:
+		return 0;
+	}
+}
+
+/* Dump recovery state, see cob_dump_protected */
+static volatile int	win32_dump_active = 0;	/* armed while dumping a field */
+static volatile int	win32_dump_faulted = 0;	/* set by the handler on a fault */
+#if defined (DUMP_RECOVERY_SETJMP)
+/* Resume point after a fault: back outside exception dispatch, jump to the setjmp */
+static void
+win32_dump_landing (void)
+{
+	longjmp (dump_env, 1);
+}
+#elif defined (DUMP_RECOVERY_CONTEXT)
+static CONTEXT		win32_dump_ctx;		/* saved by cob_dump_protected */
+#endif
+
+static PVOID		win32_exn_handle = NULL;	/* see cob_set_signal */
+
+/* Vectored Exception Handler (VEH) to treat hardware faults as POSIX signals */
+static LONG CALLBACK
+win32_exn_handler (EXCEPTION_POINTERS *ep)
+{
+	int			sig;
+	struct signal_table	entry;
+
+	sig = win32_exn_to_signal (ep->ExceptionRecord->ExceptionCode);
+	if (sig == 0) {
+		/* Exceptions we do not handle: just pass through */
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	entry = get_signal_entry (sig);
+
+	/* A fault while dumping a field resumes at the recovery point,
+	   by patching the context (never by jumping from the handler) */
+	if (entry.for_dump && win32_dump_active) {
+#if defined (DUMP_RECOVERY_SETJMP) || defined (DUMP_RECOVERY_CONTEXT)
+		win32_dump_faulted = 1;
+#ifdef DUMP_RECOVERY_SETJMP
+		ep->ContextRecord->Eip = (DWORD) (DWORD_PTR) win32_dump_landing;
+#else
+		*ep->ContextRecord = win32_dump_ctx;
+#endif
+		return EXCEPTION_CONTINUE_EXECUTION;
+#endif
+	}
+
+	/* Only handle the signals that cob_set_signal took over */
+	if (entry.for_set) {
+		cob_sig_handler (sig);
+	}
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif	/* _WIN32 */
+
+#if defined (HAVE_SIGNAL_H) && !defined (_WIN32) && defined (DUMP_RECOVERY_SETJMP)
+/* signal handler: longjmp back into cob_dump_protected */
+static void
+catch_dump_fault (int sig)
+{
+	longjmp (dump_env, sig);
+}
+#endif
+
+/* Call func (arg) with a recovery point: a fault in func (bad address, ...)
+   returns here instead of terminating, result is 1 in that case, else 0;
+   used for skipping a field whose dump faults */
+int
+cob_dump_protected (void (*func) (void *), void *arg)
+{
+#if defined (_WIN32)
+	win32_dump_active = 1;
+	win32_dump_faulted = 0;
+#if defined (DUMP_RECOVERY_SETJMP)
+	if (setjmp (dump_env) != 0) {
+		win32_dump_active = 0;
+		return 1;
+	}
+#elif defined (DUMP_RECOVERY_CONTEXT)
+	RtlCaptureContext (&win32_dump_ctx);
+	if (win32_dump_faulted) {
+		win32_dump_active = 0;
+		return 1;
+	}
+#endif
+	func (arg);
+	win32_dump_active = 0;
+	return 0;
+#elif defined (HAVE_SIGNAL_H) && defined (DUMP_RECOVERY_SETJMP)
+	void	(*ohdlr[NUM_SIGNALS]) (int);
+	int	k;
+	int	faulted;
+#ifdef HAVE_SIGACTION
+	sigset_t	sigs;
+
+	/* Unblock signals to allow catch of another fault during dump */
+	(void)sigemptyset (&sigs);
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			(void)sigaddset (&sigs, signals[k].sig);
+		}
+	}
+	(void)sigprocmask (SIG_UNBLOCK, &sigs, NULL);
+#endif
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump) {
+			ohdlr[k] = signal (signals[k].sig, catch_dump_fault);
+		}
+	}
+	faulted = setjmp (dump_env) != 0;
+	if (!faulted) {
+		func (arg);
+	}
+	/* The recovery point dies with this frame */
+	for (k = 0; k < NUM_SIGNALS; k++) {
+		if (signals[k].for_dump
+		 && ohdlr[k] != SIG_ERR) {
+			(void)signal (signals[k].sig, ohdlr[k]);
+		}
+	}
+	return faulted;
+#else
+	func (arg);
+	return 0;
+#endif
+}
+
 static void
 cob_init_sig_descriptions (void)
 {
@@ -1576,8 +1757,18 @@ cob_set_signal (void)
 	void (*ohdlr) (int);
 #endif
 
+#if defined (_WIN32)
+	/* Registered once, whatever the regime: it also does the dump recovery */
+	if (win32_exn_handle == NULL) {
+		win32_exn_handle = AddVectoredExceptionHandler (1, win32_exn_handler);
+	}
+#endif
+
 	if (signal_regime == '2') {
 		/* Don't set any signal */
+		for (k = 0; k < NUM_SIGNALS; k++) {
+			signals[k].for_set = 0;	/* not taken over */
+		}
 		return;
 	}
 
@@ -1604,6 +1795,8 @@ cob_set_signal (void)
 				if (osa.sa_handler == SIG_DFL) {
 					(void)sigemptyset (&sa.sa_mask);
 					(void)sigaction (signals[k].sig, &sa, NULL);
+				} else if (osa.sa_handler != cob_sig_handler) {
+					signals[k].for_set = 0;	/* not taken over */
 				}
 			} else {
 				/* Take direct control of some hard errors */
@@ -1629,6 +1822,9 @@ cob_set_signal (void)
 				ohdlr = signal (signals[k].sig, cob_sig_handler);
 				if (ohdlr != SIG_DFL) {
 					(void)signal (signals[k].sig, ohdlr);
+					if (ohdlr != cob_sig_handler) {
+						signals[k].for_set = 0;	/* not taken over */
+					}
 				}
 			} else {
 				/* Take direct control of some hard errors */
@@ -2312,6 +2508,11 @@ cob_open_logfile (const char *filename)
 {
 	const char *mode;
 
+	/* ignore "unsage" / "no flushing" indicator */
+	if (*filename == '!') {
+		filename++;
+	}
+
 	if (!cobsetptr->cob_unix_lf) {
 		if (*filename == '+') {
 			filename++;
@@ -2338,7 +2539,8 @@ cob_check_trace_file (void)
 		return;
 	}
 	if (cobsetptr->cob_trace_filename) {
-		cobsetptr->cob_trace_file = cob_open_logfile (cobsetptr->cob_trace_filename);
+		cobsetptr->cob_trace_file
+			= cob_open_logfile (cobsetptr->cob_trace_filename);
 		if (!cobsetptr->cob_trace_file) {
 			/* could not open the file
 			   unset the filename for not referencing it later */
@@ -2525,6 +2727,7 @@ void
 cob_set_exception (const int id)
 {
 	cobglobptr->cob_exception_code = cob_exception_tab_code[id];
+	cobglobptr->cob_exception_id = id;
 	last_exception_code = cobglobptr->cob_exception_code;
 
 	cobglobptr->last_exception_statement = STMT_UNKNOWN;
@@ -2888,6 +3091,14 @@ get_stmt_from_name (const char *stmt_name)
 
 }
 
+void
+cob_flush_if_not_disabled (FILE *stream, const char *name_option)
+{
+	if (name_option == NULL || *name_option != '!') {
+		fflush (stream);
+	}
+}
+
 /* cob_set_location is kept for backward compatibility (pre 3.0);
    it stored the location for exception handling and related
    intrinsic functions and did tracing, depending on a global flag */
@@ -2933,7 +3144,8 @@ cob_set_location (const char *sfile, const unsigned int sline,
 			 "Program-Id: %-16s Statement: %-21.21s  Line: %u\n",
 			 s, cstatement ? (char *)cstatement : _("unknown"),
 			 sline);
-		fflush (cobsetptr->cob_trace_file);
+		cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+			cobsetptr->cob_trace_filename);
 	}
 }
 
@@ -2977,7 +3189,8 @@ cob_trace_section (const char *para, const char *source, const int line)
 		} else {
 			fprintf (cobsetptr->cob_trace_file, "%s\n", para);
 		}
-		fflush (cobsetptr->cob_trace_file);
+		cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+			cobsetptr->cob_trace_filename);
 	}
 }
 
@@ -3083,7 +3296,8 @@ cob_trace_print (char *val)
 		}
 	}
 	fputc ('\n', cobsetptr->cob_trace_file);
-	fflush (cobsetptr->cob_trace_file);
+	cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+		cobsetptr->cob_trace_filename);
 }
 
 void
@@ -5891,8 +6105,13 @@ cob_display_env_value (const cob_field *f)
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
 	}
-	/* Rescan term/screen variables */
-	cob_rescan_env_vals ();
+
+	/* consider using cb_lookup_config - or a variant only checking env name,
+	   then set that instead of full env rescan each time */
+	if (strncmp ("COB", cob_local_env, 3) == 0) {	
+		/* Rescan term/screen variables */
+		cob_rescan_env_vals ();
+	}
 }
 
 void
@@ -6333,6 +6552,30 @@ cob_tidy (void)
 
 /* System routines */
 
+/* address of the low byte of the native binary argument 'n' (0-based) given
+   as 'data' (e.g. a numeric literal), as described by the caller's parameter
+   list; 'data' if that is not available; only differs on big-endian */
+unsigned char *
+cob_param_low_byte (const int n, const void *data)
+{
+#ifdef	WORDS_BIGENDIAN
+	const cob_field	*f;
+
+	if (COB_MODULE_PTR
+	 && cobglobptr->cob_call_params > n
+	 && (f = COB_MODULE_PTR->cob_procedure_params[n]) != NULL
+	 && f->data == data
+	 && f->size > 1
+	 && (COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_BINARY
+	  || COB_FIELD_TYPE (f) == COB_TYPE_NUMERIC_COMP5)) {
+		return (unsigned char *)data + f->size - 1;
+	}
+#else
+	COB_UNUSED (n);
+#endif
+	return (unsigned char *)data;
+}
+
 /* CBL_EXIT_PROC - register exit handlers that will be called
    before teardown (after posible error procedures) without
    any parameters passed
@@ -6379,7 +6622,7 @@ cob_sys_exit_proc (const void *dispo, const void *pptr)
 			return -1;
 		}
 
-		install_flag = *(unsigned char*)dispo;
+		install_flag = *cob_param_low_byte (0, dispo);
 		switch (install_flag) {
 		case 0:
 			priority = 64;
@@ -6503,7 +6746,7 @@ cob_sys_error_proc (const void *dispo, const void *pptr)
 		hp = h;
 		h = h->next;
 	}
-	x = dispo;
+	x = cob_param_low_byte (0, dispo);
 	if (*x != 0) {
 		/* Remove handler */
 		if (h != NULL) {
@@ -6876,7 +7119,7 @@ cob_sys_xf4 (void *p1, const void *p2)
 int
 cob_sys_xf5 (const void *p1, void *p2)
 {
-	const cob_u8_ptr	data_1 = p1;
+	const cob_u8_ptr	data_1 = cob_param_low_byte (0, p1);
 	cob_u8_ptr		data_2 = p2;
 	size_t			n;
 
@@ -6898,7 +7141,7 @@ int
 cob_sys_x91 (void *p1, const void *p2, void *p3)
 {
 	cob_u8_ptr		result = p1;
-	const cob_u8_ptr	func = p2;
+	const cob_u8_ptr	func = cob_param_low_byte (1, p2);
 	cob_u8_ptr		parm = p3;
 	unsigned char		*p;
 	size_t			i;
@@ -7965,6 +8208,10 @@ cob_expand_env_string (const char *strval)
 	char		ename[128] = { '\0' };
 	char		*penv;
 
+	if (strchr (strval, '$') == NULL) {
+		return cob_strdup (strval);
+	}
+
 	env = cob_malloc (envlen);
 	for (k = 0; strval[k] != 0; k++) {
 		/* String almost full?; Expand it */
@@ -7974,12 +8221,15 @@ cob_expand_env_string (const char *strval)
 		}
 
 		/* ${envname:default} */
-		if (strval[k] == '$' && strval[k + 1] == '{') {
+		if (strval[k] == '$'
+		 && strval[k + 1] == '{') {
 			k += 2;
 			for (i = 0; strval[k] != '}'
 				     && strval[k] != 0
 				     && strval[k] != ':'; k++) {
-				ename[i++] = strval[k];
+				if (i < sizeof (ename)) {
+					ename[i++] = strval[k];
+				}
 			}
 			ename[i++] = 0;
 			penv = getenv (ename);
@@ -8498,11 +8748,13 @@ get_config_val (char *value, int pos, char *orgvalue)
 		if (data_loc == offsetof (cob_settings, cob_display_print_filename)
 		 && cobsetptr->cob_display_print_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
-		} else if (data_loc == offsetof (cob_settings, cob_display_punch_filename)
+		} else
+		if (data_loc == offsetof (cob_settings, cob_display_punch_filename)
 		 && cobsetptr->cob_display_punch_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
-		} else if(data_loc == offsetof (cob_settings, cob_trace_filename)
-		      && cobsetptr->external_trace_file) {
+		} else
+		if (data_loc == offsetof (cob_settings, cob_trace_filename)
+		&& cobsetptr->external_trace_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
 		} else if (str == NULL) {
 			snprintf (value, COB_MEDIUM_MAX, _("not set"));
@@ -8581,6 +8833,7 @@ get_config_val (char *value, int pos, char *orgvalue)
 static int
 cb_lookup_config (char *keyword)
 {
+	/* TODO: uppercase + lowercase keyword with a-z, then cmp with a-z0-9_- */
 	int	i;
 	for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 		if (gc_conf[i].conf_name
@@ -8610,19 +8863,34 @@ cb_config_entry (char *buf, int line)
 
 	for (i = 0; isspace ((unsigned char)buf[i]); i++); /* drop leading spaces */
 
-	for (j = 0; buf[i] != 0 && buf[i] != ':' && !isspace ((unsigned char)buf[i]) && buf[i] != '=' && buf[i] != '#'; )
-		keyword[j++] = buf[i++];
+	for (j = 0;
+		buf[i] != 0 && buf[i] != ':'
+	 && buf[i] != '=' && buf[i] != '#'
+	 && !isspace ((unsigned char)buf[i]); ) {
+		if (j < sizeof (keyword)) {
+			keyword[j++] = buf[i++];
+		}
+	}
+
 	keyword[j] = 0;
 
 	while (buf[i] != 0 && (isspace ((unsigned char)buf[i]) || buf[i] == ':' || buf[i] == '=')) i++;
 	if (buf[i] == '"'
 	 || buf[i] == '\'') {
 		qt = buf[i++];
-		for (j = 0; buf[i] != qt && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; buf[i] != qt && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	} else {
-		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; )
-			value[j++] = buf[i++];
+		for (j = 0; !isspace ((unsigned char)buf[i]) && buf[i] != '#' && buf[i] != 0; ) {
+			if (j < sizeof (value)) {
+				value[j++] = buf[i];
+			}
+			i++;
+		}
 	}
 
 	value[j] = 0;
@@ -8681,7 +8949,7 @@ cb_config_entry (char *buf, int line)
 		cob_free (str);
 		for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 			if (gc_conf[i].env_name
-			&& strcasecmp (value, gc_conf[i].env_name) == 0) {/* no longer cleared by runtime.cfg */
+			 && strcasecmp (value, gc_conf[i].env_name) == 0) {/* no longer cleared by runtime.cfg */
 				gc_conf[i].data_type &= ~STS_ENVCLR;
 				break;
 			}
@@ -8693,7 +8961,7 @@ cb_config_entry (char *buf, int line)
 		if ((getenv (value)) != NULL ) {
 			for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 				if (gc_conf[i].env_name
-				&& strcasecmp (value, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
+				 && strcasecmp (value, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
 					gc_conf[i].data_type |= STS_ENVCLR;
 					break;
 				}
@@ -8703,8 +8971,8 @@ cb_config_entry (char *buf, int line)
 		return 0;
 	}
 
-	if (strcasecmp (keyword, "include") == 0 ||
-		strcasecmp (keyword, "includeif") == 0) {
+	if (strcasecmp (keyword, "include") == 0
+	 || strcasecmp (keyword, "includeif") == 0) {
 		str = cob_expand_env_string (value);
 		strcpy (buf, str);
 		cob_free (str);
@@ -8728,8 +8996,8 @@ cb_config_entry (char *buf, int line)
 		if (gc_conf[i].default_val) {
 			set_config_val ((char *)gc_conf[i].default_val, i);
 		} else if ((gc_conf[i].data_type & ENV_STR)
-			|| (gc_conf[i].data_type & ENV_FILE)
-			|| (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path stored as a string */
+		        || (gc_conf[i].data_type & ENV_FILE)
+		        || (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path stored as a string */
 			data = (void *) ((char *)cobsetptr + gc_conf[i].data_loc);
 			memcpy (&str, data, sizeof (char *));
 			if (str != NULL) {
@@ -9403,6 +9671,10 @@ cob_fatal_error (const enum cob_fatal_error fatal_error)
 		break;
 	case COB_FERROR_JSON:
 		cob_runtime_error (_("attempt to use non-implemented JSON I/O"));
+		break;
+	case COB_FERROR_FATAL_EC:
+		cob_runtime_error (_("unhandled fatal exception code: %s"),
+			cob_get_last_exception_name ());
 		break;
 	default:
 		/* internal rare error, no need for translation */
@@ -11198,6 +11470,7 @@ cob_dump_module (char *reason)
 			 && cobsetptr->cob_trace_filename != NULL
 			 && !cobsetptr->external_trace_file) {
 				fname = cobsetptr->cob_trace_filename;
+				if (*fname == '!') fname++;
 			}
 			if (fname != NULL) {
 				fputc ('\n', COB_STDERR);

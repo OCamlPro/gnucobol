@@ -282,6 +282,7 @@ static void	out_odoslide_grp_size (struct cb_field *p, struct cb_field *fld);
 
 static void output_stmt		(cb_tree);
 static void output_integer	(cb_tree);
+static void output_long_integer	(cb_tree);
 static void output_index	(cb_tree);
 static void output_func_1	(const char *, cb_tree);
 static void output_param	(cb_tree, int);
@@ -1650,7 +1651,6 @@ output_attr (const cb_tree x)
 					type = COB_TYPE_NUMERIC_COMP5;
 				} else
 				if (type == COB_TYPE_NUMERIC_BINARY
-				 && (f->flag_binary_swap || f->flag_real_binary)
 				 && (f->flag_indexed_by || f->index_type || f->flag_internal_register)) {
 					type = COB_TYPE_NUMERIC_COMP5;
 				}
@@ -2950,6 +2950,84 @@ cb_lookup_literal (struct cb_program *prog, cb_tree x, int make_decimal)
 
 /* Integer */
 
+/* output integer exponentiation, with a fatal check for
+   EC-SIZE-EXPONENTIATION if enabled (operands are evaluated twice) */
+static void
+output_pow (const struct cb_binary_op *p, const int is_long)
+{
+	const char	*type = is_long ? "cob_s64" : "cob_s32";
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output ("((");
+		output_operand (p->x);
+		output (" == 0 && ");
+		output_operand (p->y);
+		output (" <= 0)");
+		output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
+		output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+		output (" (%s_t)0) : ", type);
+	}
+	output ("%s_pow (", type);
+	output_operand (p->x);
+	output (", ");
+	output_operand (p->y);
+	output (")");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		output (")");
+	}
+}
+
+/* check if x is a constant known to be non-zero */
+static int
+is_nonzero_constant (cb_tree x)
+{
+	if (CB_INTEGER_P (x)) {
+		return CB_INTEGER (x)->val != 0;
+	}
+	if (CB_NUMERIC_LITERAL_P (x)) {
+		const struct cb_literal	*l = CB_LITERAL (x);
+		unsigned int	i;
+		for (i = 0; i < l->size; i++) {
+			if (l->data[i] != '0') {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+/* output integer division, with a check for EC-SIZE-ZERO-DIVIDE, which
+   is fatal if enabled (divisor is evaluated twice) */
+static void
+output_div (const struct cb_binary_op *p, const int is_long)
+{
+	void		(*output_operand) (cb_tree)
+		= is_long ? output_long_integer : output_integer;
+
+	if (is_nonzero_constant (p->y)) {
+		output ("(");
+		output_operand (p->x);
+		output (" / ");
+		output_operand (p->y);
+		output (")");
+		return;
+	}
+	output ("((");
+	output_operand (p->y);
+	output (" == 0)");
+	output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+	}
+	output (" (%s)0) : (", is_long ? "cob_s64_t" : "cob_s32_t");
+	output_operand (p->x);
+	output (" / ");
+	output_operand (p->y);
+	output ("))");
+}
+
 static void
 output_integer (cb_tree x)
 {
@@ -2990,11 +3068,9 @@ output_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s32_pow (");
-			output_integer (p->x);
-			output (", ");
-			output_integer (p->y);
-			output (")");
+			output_pow (p, 0);
+		} else if (p->op == '/') {
+			output_div (p, 0);
 		} else if (p->op == 'n') {
 			output (" ~ (");
 			output_integer (p->y);
@@ -3317,11 +3393,9 @@ output_long_integer (cb_tree x)
 		}
 		if (p->op == '^') {
 			/* TODO: Optimize: base of constant 1/-1 -> (int)0 */
-			output ("cob_s64_pow (");
-			output_long_integer (p->x);
-			output (", ");
-			output_long_integer (p->y);
-			output (")");
+			output_pow (p, 1);
+		} else if (p->op == '/') {
+			output_div (p, 1);
 		} else {
 			output ("(");
 			output_long_integer (p->x);
@@ -3990,6 +4064,29 @@ output_param (cb_tree x, int id)
 	}
 	case CB_TAG_BINARY_OP: {
 		const struct cb_binary_op	*bp = CB_BINARY_OP (x);
+		const int	chk_zero_divide = bp->op == '/'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+			&& !is_nonzero_constant (bp->y);
+		const int	chk_pow = bp->op == '^'
+			&& CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION);
+		/* fatal checks for EC-SIZE (operands evaluated twice) */
+		if (chk_zero_divide) {
+			output ("(cob_cmp_int (");
+			output_param (bp->y, id);
+			output (", 0) == 0");
+			output (" ? (cob_set_exception (COB_EC_SIZE_ZERO_DIVIDE),");
+			output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+			output (" (cob_field *)NULL) : ");
+		} else if (chk_pow) {
+			output ("(!cob_valid_pow (");
+			output_param (bp->x, id);
+			output (", ");
+			output_param (bp->y, id);
+			output (")");
+			output (" ? (cob_set_exception (COB_EC_SIZE_EXPONENTIATION),");
+			output (" cob_fatal_error (COB_FERROR_FATAL_EC),");
+			output (" (cob_field *)NULL) : ");
+		}
 		output ("cob_intr_binop (");
 		output_param (bp->x, id);
 		output (", ");
@@ -4003,6 +4100,9 @@ output_param (cb_tree x, int id)
 		output (", ");
 		output_param (bp->y, id);
 		output (")");
+		if (chk_zero_divide || chk_pow) {
+			output (")");
+		}
 		break;
 	}
 	case CB_TAG_INTRINSIC: {
@@ -4401,6 +4501,28 @@ output_funcall_typed (struct cb_funcall *p, const char type)
 			output_data (p->argv[1]);
 			output ("))");
 		}
+		break;
+
+	case 'Z':	/* Fatal check for EC-SIZE on a decimal result */
+		if (!CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)
+		 && !CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("0");
+			break;
+		}
+		output ("((");
+		output_param (p->argv[0], 0);
+		output ("->scale == COB_DECIMAL_NAN && (");
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)");
+			if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+				output (" || ");
+			}
+		}
+		if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+			output ("cob_last_exception_is (COB_EC_SIZE_EXPONENTIATION)");
+		}
+		output ("))");
+		output (" ? (cob_fatal_error (COB_FERROR_FATAL_EC), 0) : 0)");
 		break;
 
 	case 'R':	/* Generate REPORT line */
@@ -5480,9 +5602,11 @@ output_cobol_info (cb_tree x)
 	output ("#line %d \"", x->source_line);
 
     if (strcmp (p, COB_DASH)) {
-	/* escape COBOL file name for C string */
+		/* escape COBOL file name for C string */
 		while (*p) {
-			if (*p == '\\') {
+			switch (*p) {
+			case '\\':
+			case '"':
 				output ("%c", '\\');
 			}
 			output ("%c", *p++);
@@ -6590,6 +6714,60 @@ output_call_by_value_args (cb_tree x, cb_tree l)
 	}
 }
 
+/* Byte size of a numeric literal passed in CALL */
+static unsigned int
+call_literal_size (const cb_tree x)
+{
+	switch (cb_call_literal_size) {
+	case CB_LITERAL_SIZE_32:
+		return 4;
+	case CB_LITERAL_SIZE_64:
+		return 8;
+	default:
+		return cb_fits_int (x) ? 4 : 8;
+	}
+}
+
+/* Set the data of the 'content_N' of a numeric literal passed in CALL */
+static void
+output_call_literal (const cb_tree x, const cob_u32_t n)
+{
+	const unsigned int	size = call_literal_size (x);
+	cob_u64_t		v;
+	unsigned int		i;
+
+	if (cb_fits_int (x)) {
+		v = (cob_u64_t)(cob_s64_t)cb_get_int (x);
+	} else if (CB_LITERAL (x)->sign >= 0) {
+		v = cb_get_u_long_long (x);
+	} else {
+		v = (cob_u64_t)cb_get_long_long (x);
+	}
+	if (size == 4) {
+		v &= COB_U64_C(0xFFFFFFFF);
+	}
+	if (cb_call_literal_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+		for (i = 0; i < size; i++) {
+			output_line ("content_%u.data[%u] = 0x%02X;", n, i,
+				(unsigned int)((v >> (8 * (size - 1 - i))) & 0xFF));
+		}
+		return;
+	}
+	output_prefix ();
+	if (size == 4) {
+		output ("content_%u.dataint = ", n);
+		output ("%d", (int)(cob_u32_t)v);
+	} else if (CB_LITERAL (x)->sign >= 0) {
+		output ("content_%u.dataull = ", n);
+		output (CB_FMT_LLU_F, v);
+	} else {
+		output ("content_%u.datall = ", n);
+		output (CB_FMT_LLD_F, (cob_s64_t)v);
+	}
+	output (";");
+	output_newline ();
+}
+
 static void
 output_bin_field (const cb_tree x, const cob_u32_t id)
 {
@@ -6601,18 +6779,28 @@ output_bin_field (const cb_tree x, const cob_u32_t id)
 	if (!CB_NUMERIC_LITERAL_P (x)) {
 		return;
 	}
-	aflags = COB_FLAG_REAL_BINARY;
-	if (cb_fits_int (x)) {
-		size = 4;
+	size = call_literal_size (x);
+	if (size == 4) {
 		digits = 9;
 		aflags = COB_FLAG_HAVE_SIGN;	/* Drop: COB_FLAG_REAL_BINARY */
+		if (cb_call_literal_size == CB_LITERAL_SIZE_32
+		 && !cb_fits_int (x)
+		 && CB_LITERAL (x)->sign >= 0) {
+			digits = 10;
+			aflags = 0;
+		}
 	} else {
-		size = 8;
 		digits = 18;
+		aflags = COB_FLAG_REAL_BINARY;
 		if (CB_LITERAL (x)->sign < 0) {
 			aflags |= COB_FLAG_HAVE_SIGN;
 		}
 	}
+#ifndef	WORDS_BIGENDIAN
+	if (cb_call_literal_byteorder == CB_BYTEORDER_BIG_ENDIAN) {
+		aflags |= COB_FLAG_BINARY_SWAP;
+	}
+#endif
 	aflags |= COB_FLAG_CONSTANT;
 	i = lookup_attr (COB_TYPE_NUMERIC_BINARY, digits, 0, aflags, NULL, 0);
 	/* Note: some C compilers (SUN for one) will not accept inline initialization
@@ -6882,23 +7070,7 @@ output_call (struct cb_call *p)
 				/* Set 'data' after all variable declarations */
 				output_line ("content_fb_%u.data = content_%u.data;", n, n);
 
-				output_prefix ();
-				if (cb_fits_int (x)) {
-					output ("content_%u.dataint = ", n);
-					output ("%d", cb_get_int (x));
-				} else {
-					if (CB_LITERAL (x)->sign >= 0) {
-						output ("content_%u.dataull = ", n);
-						output (CB_FMT_LLU_F,
-							cb_get_u_long_long (x));
-					} else {
-						output ("content_%u.datall = ", n);
-						output (CB_FMT_LLD_F,
-							cb_get_long_long (x));
-					}
-				}
-				output (";");
-				output_newline ();
+				output_call_literal (x, n);
 			} else if (CB_BINARY_OP_P (x)) {
 				output_prefix ();
 				output ("content_%u.dataint = ", n);
@@ -6925,19 +7097,7 @@ output_call (struct cb_call *p)
 					/* Set 'data' after all variable declarations */
 					output_line ("content_fb_%u.data = content_%u.data;", n, n);
 
-					output_prefix ();
-					if (cb_fits_int (x)) {
-						output ("content_%u.dataint = ", n);
-						output ("%d", cb_get_int (x));
-					} else if (CB_LITERAL (x)->sign >= 0) {
-						output ("content_%u.dataull = ", n);
-						output (CB_FMT_LLU_F, cb_get_u_long_long (x));
-					} else {
-						output ("content_%u.datall = ", n);
-						output (CB_FMT_LLD_F, cb_get_long_long (x));
-					}
-					output (";");
-					output_newline ();
+					output_call_literal (x, n);
 				} else if (CB_REF_OR_FIELD_P (x)
 				        && CB_TREE_CATEGORY (x) == CB_CATEGORY_NUMERIC
 				        && cb_code_field (x)->usage == CB_USAGE_LENGTH) {
@@ -8832,6 +8992,43 @@ output_ec_condition_for_handler (const enum cb_handler_type handler_type)
 }
 
 static void
+output_ec_size_handler (void)
+{
+	int ec_checked = 0;
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ADDRESS)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ADDRESS);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_EXPONENTIATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_EXPONENTIATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_IMP)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_IMP);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_OVERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_OVERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_TRUNCATION)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_TRUNCATION);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_UNDERFLOW)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_UNDERFLOW);
+	}
+	if (CB_EXCEPTION_ENABLE (COB_EC_SIZE_ZERO_DIVIDE)) {
+		ec_checked |= CB_EXCEPTION_CODE (COB_EC_SIZE_ZERO_DIVIDE);
+	}
+	if (ec_checked) {
+		output_line (
+			"if (((cob_glob_ptr->cob_exception_code & 0x%04x) == 0x%04x)",
+			CB_EXCEPTION_CODE (COB_EC_SIZE),
+			CB_EXCEPTION_CODE (COB_EC_SIZE));
+		output_line (" && ((cob_glob_ptr->cob_exception_code & 0x%04x) != 0)",
+			ec_checked & 0x00FF);
+		output_line ( " && (cob_glob_ptr->cob_got_exception > 0))");
+		output_line ("\t" "cob_fatal_error (COB_FERROR_FATAL_EC);");
+	}
+}
+
+static void
 output_handler (const struct cb_statement *stmt)
 {
 	if (stmt->file) {
@@ -8839,6 +9036,14 @@ output_handler (const struct cb_statement *stmt)
 		return;
 	}
 
+	if (stmt->ex_handler || stmt->not_ex_handler) {
+		/* We have a handler, so the exceptions should not be raised, and we reset them
+		 * before in case the handling statements can also raise exceptions. */
+		output_line ("if (cob_glob_ptr->cob_got_exception)");
+		output_block_open ();
+		output_line ("cob_glob_ptr->cob_got_exception = -1;");
+		output_block_close ();
+	}
 	if (stmt->ex_handler) {
 		output_ec_condition_for_handler (stmt->handler_type);
 		output_block_open ();
@@ -8849,6 +9054,8 @@ output_handler (const struct cb_statement *stmt)
 		}
 	}
 	if (stmt->not_ex_handler) {
+		/* We have a not handler, so we should reset exceptions to avoid them
+		 * being triggered after */
 		if (stmt->ex_handler == NULL) {
 			output_line ("if (!cob_glob_ptr->cob_exception_code)");
 		}
@@ -9286,6 +9493,13 @@ output_stmt (cb_tree x)
 				output_debug_stmts (debug_checks);
 			}
 		}
+
+		if (p->handler_type == SIZE_ERROR_HANDLER
+		 && p->ex_handler == NULL
+		 && p->not_ex_handler == NULL) {
+			output_ec_size_handler ();
+		}
+
 		break;
 	}
 	case CB_TAG_LABEL:
@@ -13304,6 +13518,24 @@ try_get_by_value_parameter_type (const enum cb_usage usage,
 	return NULL;
 }
 
+/* set cob_parm_N to the address of the by-value sticky variable */
+static void
+output_sticky_parm_address (const int id, const int size)
+{
+#ifdef	WORDS_BIGENDIAN
+	if (size < 8) {
+		/* value is right-aligned in its C variable */
+		output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d"
+			" + (sizeof (cob_parm_l_%d) > %d ? sizeof (cob_parm_l_%d) - %d : 0);",
+			id, id, id, size, id, size);
+		return;
+	}
+#else
+	COB_UNUSED (size);
+#endif
+	output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;", id, id);
+}
+
 static void
 output_program_entry_function_parameters (cb_tree using_list, const int gencode,
 					  const char ** const s_type)
@@ -13373,6 +13605,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 	cob_u32_t		n;
 	int			sticky_ids[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			sticky_nonp[MAX_CALL_FIELD_PARAMS] = { 0 };
+	int			sticky_size[MAX_CALL_FIELD_PARAMS] = { 0 };
 	int			entry_convention = 0;
 
 	/* LCOV_EXCL_START */
@@ -13474,6 +13707,7 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 		cb_tree f_tree = CB_VALUE (l);
 		f = cb_code_field (f_tree);
 		sticky_ids[parmnum] = f->id;
+		sticky_size[parmnum] = (int)f->size;
 		if (!cb_sticky_linkage
 		 && (entry_convention & CB_CONV_COBOL)) {
 			output_line ("cob_u8_t *cob_parm_%d = NULL;"
@@ -13545,9 +13779,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							output_line ("cob_parm_l_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
 								sticky_ids[n]);
-							output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-								sticky_ids[n],
-								sticky_ids[n]);
+							output_sticky_parm_address (sticky_ids[n],
+								sticky_size[n]);
 						} else {
 							output_line ("cob_parm_%d = %s%d;",
 								sticky_ids[n], CB_PREFIX_BASE,
@@ -13569,9 +13802,8 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 					output_line ("cob_parm_l_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
 						sticky_ids[n]);
-					output_line ("cob_parm_%d = (cob_u8_ptr)&cob_parm_l_%d;",
-						sticky_ids[n],
-						sticky_ids[n]);
+					output_sticky_parm_address (sticky_ids[n],
+						sticky_size[n]);
 				} else {
 					output_line ("cob_parm_%d = %s%d;",
 						sticky_ids[n], CB_PREFIX_BASE,
@@ -13708,6 +13940,14 @@ output_entry_function (struct cb_program *prog, cb_tree entry,
 							  || f2->usage == CB_USAGE_PROGRAM_POINTER)
 							 && (entry_convention & CB_CONV_COBOL)) {
 								output (", (cob_u8_ptr)&ptr_%d", f2->id);
+#ifdef	WORDS_BIGENDIAN
+							} else if (f2->size < 8) {
+								/* value is right-aligned in its C variable */
+								output (", (cob_u8_ptr)&%s%d + (sizeof (%s%d) > %d ? sizeof (%s%d) - %d : 0)",
+									CB_PREFIX_BASE, f2->id,
+									CB_PREFIX_BASE, f2->id, (int)f2->size,
+									CB_PREFIX_BASE, f2->id, (int)f2->size);
+#endif
 							} else {
 								output (", (cob_u8_ptr)&%s%d",
 									CB_PREFIX_BASE, f2->id);
@@ -14039,7 +14279,7 @@ codegen_init (struct cb_program *prog, const char *translate_name)
 		for (s = output_name; *s; s++) {
 			switch (*s) {
 			case '\\':
-			case '\"':
+			case '"':
 				buff[pos++] = '\\';
 			}
 			if (pos >= COB_MEDIUM_MAX) {
@@ -14196,14 +14436,14 @@ codegen_internal (struct cb_program *prog, const int subsequent_call)
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_function_entry_function (prog, l, 1);
 		}
-	} else {
+	} else if (prog->prog_type == COB_MODULE_TYPE_PROGRAM) {
 		output_line ("/* PROGRAM-ID '%s' */", prog->orig_program_id);
 		output_newline ();
 		for (l = prog->entry_list; l; l = CB_CHAIN (l)) {
 			output_entry_function (prog, l, prog->parameter_list, 1);
 			progid++;
 		}
-	}
+	} /* TODO (OO): Handle other prog types. */
 
 	output_internal_function (prog, prog->parameter_list);
 

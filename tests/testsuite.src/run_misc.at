@@ -594,6 +594,88 @@ AT_CHECK([$COBCRUN_DIRECT ./smaller], [1], [],
 AT_CLEANUP
 
 
+AT_SETUP([SET ENVIRONMENT TO / ACCEPT FROM ENVIRONMENT])
+AT_KEYWORDS([runmisc runtime_option COB_PHYSICAL_CANCEL])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    os-check   pic x(7).
+         88 os-is-windows-or-dos values 'WINDOWS' 'FREEDOS'.
+       01  callee       pic x(8) value "./prog2".
+         88 callee-wdos value ".\prog2".
+       PROCEDURE DIVISION.
+       main-start.
+       
+       >> IF CHECK-PERF IS DEFINED
+           PERFORM DO-CHECK 20000 TIMES.
+       >> END-IF
+
+       do-check.
+
+      *>  variable that changes the current env to
+      *>  a non-default value
+          SET ENVIRONMENT "COB_PHYSICAL_CANCEL" TO "Y".
+
+      *>  more common: other vars
+          SET ENVIRONMENT "FILE1" TO "file1".
+          SET ENVIRONMENT "FILE2" TO "file2".
+          SET ENVIRONMENT "FILE3" TO "file3".
+          SET ENVIRONMENT "FILE4" TO "file4".
+          
+          accept os-check from environment "COB_ON_CYGWIN".
+          if os-check = spaces
+             accept os-check from environment "OS".
+             if os-check = spaces
+                accept os-check from environment "OS_NAME".
+
+       test-part2.
+          inspect os-check converting "werfdosin" to "WERFDOSIN".
+          if os-is-windows-or-dos
+             set callee-wdos to true.
+      
+      *>  external program to see if the vars are externalized
+          CALL "SYSTEM" USING callee.
+          STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01    INPUT-VAR PIC X(6).
+       PROCEDURE DIVISION.
+       DO-CHECK.
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "COB_PHYSICAL_CANCEL"
+          IF INPUT-VAR NOT = "Y"
+             DISPLAY "UNEXPECTED VALUE CANCEL >" INPUT-VAR "<"
+               UPON SYSERR
+             MOVE "Y" TO INPUT-VAR.
+            
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "SOMETHING_NOT_SET"
+          IF INPUT-VAR NOT = SPACE
+             DISPLAY "UNEXPECTED VALUE NOT_SET >" INPUT-VAR "<"
+               UPON SYSERR.
+         
+          ACCEPT INPUT-VAR FROM ENVIRONMENT "FILE1"
+          IF INPUT-VAR NOT = "file1"
+             DISPLAY "UNEXPECTED VALUE FILE1   >" INPUT-VAR "<"
+               UPON SYSERR.
+          
+          DISPLAY 'END' WITH NO ADVANCING.
+          GOBACK.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE prog2.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [END], [])
+
+AT_CLEANUP
+
+
 ## MOVE statement
 
 AT_SETUP([MOVE to itself])
@@ -2655,8 +2737,10 @@ AT_DATA([prog.cob], [
        01  X            PIC 9(2) VALUE 0.
        01  Y            PIC 9(2) VALUE 0.
        PROCEDURE        DIVISION.
-           COMPUTE X = 100. *> this overflows which does not store a result
-           COMPUTE Y = 99.  *> and once in a time this result was not stored
+           COMPUTE X = 100 ON SIZE ERROR CONTINUE.
+           *> this overflows which does not store a result
+           COMPUTE Y = 99.
+           *> and once in a time this result was not stored
            IF X NOT = 0 AND
               Y NOT = 99
               DISPLAY Y.
@@ -3183,6 +3267,12 @@ AT_DATA([prog.cob], [
           05 RES-DELIM-2       PIC X(01).
           05 RES-COUNT-2       PIC 9(02).
           05 RES-TALLY         PIC 9(02).
+
+       01 DST  PIC X(10) VALUE SPACES.
+       01 DLM1 PIC X(2)  VALUE "AB".
+       01 DLM2 PIC X(2)  VALUE "CD".
+       01 SRC  PIC X(1)  VALUE "Y".
+
       *>
        PROCEDURE DIVISION.
       *>------------------
@@ -3203,7 +3293,7 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 1 should not OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-1-RESULT
       *>
       *>   case B : should  OVERFLOW; use of two delimiters
@@ -3222,8 +3312,22 @@ AT_DATA([prog.cob], [
                    DISPLAY
                       'Unstring tallying case 2 should  OVERFLOW'
                    END-DISPLAY
-           END-UNSTRING.
+           END-UNSTRING
            PERFORM TEST-CASE-2-RESULT
+      *>
+      *>   case C :
+      *>   this can never unstring anything - but still needed to be
+      *>   processed for additional clauses
+      *>   TODO: add compile-time warning
+           UNSTRING SRC DELIMITED BY DLM1 OR DLM2 INTO DST
+               ON OVERFLOW
+                   DISPLAY
+                      'Unstring case 3 should  OVERFLOW'
+                   END-DISPLAY
+           END-UNSTRING
+           IF DST NOT = "Y"
+              DISPLAY "UN DST=" DST
+           END-IF
       *>
            GOBACK.
 
@@ -3681,7 +3785,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog2], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([Alphanum comparison with default COLLATING SEQUENCE])
+AT_SETUP([Alphanum comparison, default COLLATING SEQUENCE])
 AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
 
 AT_DATA([prog.cob], [
@@ -3999,7 +4103,7 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([SEARCH ALL: table with default COLLATING SEQUENCE])
+AT_SETUP([SEARCH ALL with default COLLATING SEQUENCE])
 AT_KEYWORDS([runmisc EBCDIC ASCII default-colseq])
 
 AT_DATA([prog.cob], [
@@ -4146,7 +4250,8 @@ AT_DATA([prog.cob], [
            END-IF.
        B99.
            EXIT.
-      *> expected without -fperform-osvs: fall through here _SHOULD_ abort with -fsection-exit-check
+      *> expected without -fperform-osvs: fall through here
+      *> _SHOULD_ abort with -fsection-exit-check
 ])
 
 AT_CHECK([$COMPILE -fperform-osvs prog.cob], [0], [], [])
@@ -4198,7 +4303,7 @@ AT_CLEANUP
 
 
 AT_SETUP([pre-loading via COB_PRE_LOAD])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL preload])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY preload])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4218,32 +4323,65 @@ AT_DATA([caller.cob], [
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
 # lookup with "common" COBOL resolve (COB_LIBRARY_PATH and COB_MODULE_EXT)
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD=callee COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 # lookup with full path
-AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_PRE_LOAD="$PWD/callee.$COB_MODULE_EXT" \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
 
-AT_SETUP([resolve / execution in parallel threads])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL cob_resolve cob_tidy pthread])
+AT_SETUP([isolated resolve / exec with parallel threads])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY COB_PRE_LOAD COB_PHYSICAL_CANCEL
+cob_resolve cob_cancel cob_tidy dlmopen pthread])
 
-# check COB_LOAD_GLOBAL=false - could fail on some environments,
-# but those are unlikely to have linkable pthreads as well
+# Skips at any point if the platform does not support it (dlmopen, pthread).
+#
+# It also requires glibc >= 2.34 due to an implementation bug in dlmopen in
+# previous versions, see https://sourceware.org/bugzilla/show_bug.cgi?id=29528
+#
+# The test also contains an alternative C11 implementation that may be needed
+# for portability in the future.
+
 
 AT_DATA([caller.c], [
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h> /* For POSIX threads */
 #include <dlfcn.h>   /* For dynamic library loading */
-#include <unistd.h>
+#include <libcob.h>
 
-typedef int (*hello_world_func)(void);
-typedef void (*cob_init_func)(int, char **);
-typedef hello_world_func (*cob_resolve_func)(char *);
-typedef void (*cob_tidy_func)(void);
+#if defined (USE_PTHREAD)
+#include <pthread.h>
+#elif defined (USE_C11_THREADS)
+#include <threads.h>
+#endif
+
+#if defined (__SANITIZE_ADDRESS__)
+#  define ASAN_USED 1
+#elif defined (__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define ASAN_USED 1
+#  endif
+#endif
+#if defined (ASAN_USED)
+    #error dlmopen cannot work with ASAN due namespace issues
+    #warn  this test can only work if none of libcob, caller or modules use it
+#endif
+
+#if defined (__GLIBC__) \
+ && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 34))
+    #error glibc implementation of dlmopen is known to be buggy for versions under 2.34
+#endif
+
+typedef int (*cobol_program_fn)(void);
+typedef void (*cob_init_fn)(int, char **);
+typedef cobol_program_fn (*cob_resolve_fn)(char *);
+typedef void (*cob_cancel_fn)(const char *);
+typedef void (*cob_tidy_fn)(void);
 
 #if defined(_WIN32)
   #define LIB_EXT ".dll"
@@ -4254,79 +4392,171 @@ typedef void (*cob_tidy_func)(void);
 #endif
 
 /* Function to call COBOL shared library functions */
-void *callCobol() {
-
+static int
+callCobol () {
     const char *libCobPath = "libcob" LIB_EXT;
     void *libCobHandle;
-    cob_init_func cob_init;
-    cob_resolve_func cob_resolve;
-    cob_tidy_func cob_tidy;
-    hello_world_func hello_world;
+    cob_init_fn cob_init;
+    cob_resolve_fn cob_resolve;
+    cob_cancel_fn cob_cancel;
+    cob_tidy_fn cob_tidy;
+    cobol_program_fn program;
+    int iteration;
 
-    /* Use `dlmopen` to load a unique copy of the shared library in each thread */
-    libCobHandle = dlmopen(LM_ID_NEWLM, libCobPath, RTLD_NOW);
+    int result = EXIT_SUCCESS;
+
+    /* Load a unique copy of the shared library for each worker. */
+    libCobHandle = dlmopen (LM_ID_NEWLM, libCobPath, RTLD_NOW);
     if (!libCobHandle) {
-        fprintf(stderr, "Thread %ld: Failed to load libcob with dlmopen from %s: %s\n",
-                pthread_self(), libCobPath, dlerror());
-        return NULL;
+       fprintf (stderr, "Worker: Failed to load libcob with dlmopen from %s: %s\n",
+                libCobPath, dlerror ());
+       return EXIT_FAILURE;
     }
 
 #define RESOLVE_SYMBOL(symbol, type) \
-    symbol = (type) dlsym(libCobHandle, #symbol); \
+    symbol = (type) dlsym (libCobHandle, #symbol); \
     if (!symbol) { \
-        fprintf(stderr, "Thread %ld: Failed to load symbol %s: %s\n", \
-                pthread_self(), #symbol, dlerror()); \
-        dlclose(libCobHandle); \
-        return NULL; \
+        fprintf (stderr, "Worker: Failed to load symbol %s: %s\n", \
+                #symbol, dlerror ()); \
+        dlclose (libCobHandle); \
+        return EXIT_FAILURE; \
     }
 
     /* Resolve required symbols from the COBOL library */
-    RESOLVE_SYMBOL(cob_init, cob_init_func);
-    RESOLVE_SYMBOL(cob_resolve, cob_resolve_func);
-    RESOLVE_SYMBOL(cob_tidy, cob_tidy_func);
-    cob_init(0, NULL);
-    hello_world = cob_resolve("prog");
-    if (hello_world) {
-        hello_world(); /* Call the COBOL function */
-    } else {
-        fprintf(stderr, "Thread %ld: Failed to resolve prog function.\n", pthread_self());
+    RESOLVE_SYMBOL (cob_init, cob_init_fn);
+    RESOLVE_SYMBOL (cob_resolve, cob_resolve_fn);
+    RESOLVE_SYMBOL (cob_cancel, cob_cancel_fn);
+    RESOLVE_SYMBOL (cob_tidy, cob_tidy_fn);
+    cob_init (0, NULL);
+
+
+#if defined(USE_PTHREAD) || defined(USE_C11_THREADS)
+    iteration = 0;
+#else
+    iteration = 1; /* Unthreaded test does not interact with COB_PHYSICAL_CANCEL */
+#endif
+
+    for (; iteration < 2; iteration++) {
+        /* Resolve prog every iteration due to cancellation: 
+           physical cancellation unloads prog if it is not preloaded. */
+        program = cob_resolve ("prog");
+        if (!program) {
+            fprintf (stderr, "Worker: Failed to resolve prog function.\n");
+            result = EXIT_FAILURE;
+            break;
+        }
+        program (); /* Call the COBOL function */
+        cob_cancel ("prog");
     }
+
     /* Clean up COBOL resources */
-    cob_tidy();
-    dlclose(libCobHandle);
-    return NULL;
+    cob_tidy ();
+    dlclose (libCobHandle);
+    return result;
 }
 
 /* Thread function wrapper around `callCobol` */
-void *threadFunction(void *arg) {
-    long threadId = (long)arg;
-    callCobol();
+
+#if defined (USE_PTHREAD)
+static void *threadFunction (void *arg)
+{
+    int *result = arg;
+    *result = callCobol ();
     return NULL;
 }
+#elif defined (USE_C11_THREADS)
+static int threadFunction (void *arg)
+{
+    (void) arg;
+    return callCobol ();
+}
+#endif
 
 /* Main function */
-int main (int argc, char **argv) {
-    const int numThreads = 2; /* Number of threads to create */
-    pthread_t threads[[numThreads]];
-    long i;
+int main (int argc, char **argv)
+{
+#if !defined(USE_PTHREAD) && !defined(USE_C11_THREADS)
+    /* dlmopen test with no threads */
+    (void) argc;
+    (void) argv;
+    return callCobol ();
+#else
+
+#define NUM_THREADS 2
+#if defined (USE_PTHREAD)
+    pthread_t threads[[NUM_THREADS]];
+#else
+    thrd_t threads[[NUM_THREADS]];
+#endif
+    int results[[NUM_THREADS]];
+    int i;
     int j;
+    int result = EXIT_SUCCESS;
+    cobol_program_fn sleep_program;
+
+    /* Use the base namespace runtime for COBOL sleep. */
+    cob_init (argc, argv);
+    sleep_program = (cobol_program_fn) cob_resolve ("thread_sleep");
+    if (!sleep_program) {
+        fprintf (stderr, "Main thread: Failed to resolve thread_sleep function.\n");
+        cob_tidy ();
+        return EXIT_FAILURE;
+    }
+
     /* Create multiple threads */
-    for (i = 0; i < numThreads; i++) {
-        if (pthread_create(&threads[[i]], NULL, threadFunction, (void *)i) != 0) {
-            fprintf(stderr, "Main thread: Failed to create thread %ld.\n", i);
-            return EXIT_FAILURE;
+    for (i = 0; i < NUM_THREADS; i++) {
+#if defined (USE_PTHREAD)
+        int thread_created = pthread_create (&threads[[i]], NULL, threadFunction, &results[[i]]) == 0;
+#else
+        int thread_created = thrd_create (&threads[[i]], threadFunction, NULL) == thrd_success;
+#endif
+        if (!thread_created) {
+            fprintf (stderr, "Main thread: Failed to create thread %d.\n", i);
+            result = EXIT_FAILURE;
+            break;
         }
+        /* Stagger startup slightly */
+        sleep_program ();
     }
     /* Wait for all threads to finish */
-    for (j = 0; j < numThreads; j++) {
-        pthread_join(threads[[j]], NULL);
+    for (j = 0; j < i; j++) {
+#if defined (USE_PTHREAD)
+        int thread_joined = pthread_join (threads[[j]], NULL) == 0;
+#else
+        int thread_joined = thrd_join (threads[[j]], &results[[j]]) == thrd_success;
+#endif
+        if (!thread_joined) {
+            fprintf (stderr, "Main thread: Failed to join thread %d.\n", j);
+            return EXIT_FAILURE;
+        }
+        if (results[[j]] != EXIT_SUCCESS) {
+            result = EXIT_FAILURE;
+        }
     }
-    return EXIT_SUCCESS;
+    cob_tidy ();
+    return result;
+#endif
 }
 ])
-AT_CHECK([$CMPILE -ldl -lpthread caller.c], [0], [], [], [
+
+AT_DATA([thread_sleep.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. thread_sleep.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 DELAY-SECONDS PIC 9V9(6).
+
+       PROCEDURE DIVISION.
+           COMPUTE DELAY-SECONDS = 0.1 + FUNCTION RANDOM * 0.01
+           CONTINUE AFTER DELAY-SECONDS SECONDS
+           GOBACK.
+])
+AT_CHECK([$COMPILE_MODULE thread_sleep.cob], [0], [], [])
+
+AT_CHECK([$COMPILE -ldl -lpthread caller.c], [0], [], [], [
    echo "C compilation / linking failed, skipping rest of group"
-   exit 77
+   AT_SKIP_IF([:])
 ])
 
 AT_DATA([prog.cob], [
@@ -4345,17 +4575,84 @@ AT_DATA([prog.cob], [
            DISPLAY "Final count: " COUNTER
            GOBACK.
 ])
+
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false ./caller], [0],
+
+# Preloading an alternate implementation of prog must work in each dlmopen namespace.
+AT_DATA([preloaded.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 COUNTER PIC 9(5) VALUE 0.
+
+       PROCEDURE DIVISION.
+           PERFORM 1000 TIMES
+              ADD 1 TO COUNTER
+              CALL "sched_yield" ON EXCEPTION CONTINUE
+           END-PERFORM
+           DISPLAY "Preloaded count: " COUNTER
+           GOBACK.
+])
+
+AT_CHECK([$COMPILE_MODULE preloaded.cob], [0], [], [])
+
+# Unthreaded basic dlmopen test
+AT_CHECK([$COMPILE -ldl caller.c], [0], [], [], [
+   echo "C compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
+])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+], [])
+AT_CHECK([COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+], [])
+
+
+# Same test as above, but threaded and with/out COB_PHYSICAL_CANCEL
+AT_CHECK([$COMPILE -ldl -lpthread -A -DUSE_PTHREAD caller.c], [0], [], [], [
+   echo "pthread compilation / linking failed, skipping rest of group"
+   AT_SKIP_IF([:])
+])
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
 [Final count: 01000
 Final count: 01000
+Final count: 01000
+Final count: 01000
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0],
+[Final count: 01000
+Final count: 01000
+Final count: 01000
+Final count: 01000
+], [])
+# Pre-loaded modules are not unloaded, but must still be reset.
+AT_CHECK([COB_PHYSICAL_CANCEL=NO COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+], [])
+AT_CHECK([COB_PHYSICAL_CANCEL=YES COB_PRE_LOAD=preloaded COB_LOAD_VISIBILITY=LOCAL_ONLY \
+$COBCRUN_DIRECT ./caller], [0],
+[Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
+Preloaded count: 01000
 ], [])
 
 AT_CLEANUP
 
 
 AT_SETUP([COB_PRE_LOAD with entry points])
-AT_KEYWORDS([runmisc COB_LOAD_GLOBAL])
+AT_KEYWORDS([runmisc COB_LOAD_VISIBILITY])
 
 AT_DATA([prog.cob], [
         IDENTIFICATION DIVISION.
@@ -4416,12 +4713,14 @@ AT_DATA([main-prog.cob], [
 AT_CHECK([$COMPILE_MODULE prog.cob], [0], [], [])
 AT_CHECK([$COMPILE_MODULE prog1.cob], [0], [], [])
 AT_CHECK([$COMPILE main-prog.cob], [0], [], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
 ], [])
-AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./main-prog], [0],
+AT_CHECK([COB_PRE_LOAD="prog"$PATHSEP"prog1" COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./main-prog], [0],
 [12abc
 11
 xxxxx
@@ -4497,8 +4796,8 @@ AT_CHECK([COB_LOAD_CASE=UPPER $COBCRUN_DIRECT ./caller], [0], [], [])
 AT_CLEANUP
 
 
-AT_SETUP([CALL/CANCEL with COB_LOAD_GLOBAL])
-AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_GLOBAL])
+AT_SETUP([CALL/CANCEL with COB_LOAD_VISIBILITY])
+AT_KEYWORDS([runmisc CALL CANCEL COB_LOAD_VISIBILITY])
 
 AT_DATA([callee.cob], [
        IDENTIFICATION   DIVISION.
@@ -4519,8 +4818,10 @@ AT_DATA([caller.cob], [
 
 AT_CHECK([$COMPILE_MODULE callee.cob], [0], [], [])
 AT_CHECK([$COMPILE caller.cob], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=true $COBCRUN_DIRECT ./caller], [0], [], [])
-AT_CHECK([COB_LOAD_GLOBAL=false $COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=GLOBAL \
+$COBCRUN_DIRECT ./caller], [0], [], [])
+AT_CHECK([COB_LOAD_VISIBILITY=LOCAL_PREFERRED \
+$COBCRUN_DIRECT ./caller], [0], [], [])
 
 AT_CLEANUP
 
@@ -4909,7 +5210,11 @@ AT_CHECK([$COBCRUN_DIRECT ./caller notthere], [0], [],
 [libcob: error: module 'notthere' not found
 note: error exit with return code -1 and error "module 'notthere' not found"
 ])
-AT_CHECK([$COBCRUN_DIRECT ./caller buggy], [0], [out of bounds - refmod following],
+# We just acknowledge that we have some minor leaks in case of hard errors in cob_call_with_exception_check
+# CHECKME: can we still prevent those?
+AT_CHECK([ASAN_OPTIONS=detect_leaks=0 \
+          $COBCRUN_DIRECT ./caller buggy], [0],
+[out of bounds - refmod following],
 [libcob: buggy.cob:10: error: offset of 'VAR' out of bounds: 2, maximum: 1
 note: error exit with return code -1 and error "buggy.cob:10: offset of 'VAR' out of bounds: 2, maximum: 1"
 ])
@@ -7338,10 +7643,10 @@ AT_DATA([callee2.cob], [
                                  .
            EXIT PROGRAM.
 ])
-
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee.cob], [0], [], [])
-AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor callee2.cob], [0], [], [])
-AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor -o prog caller.cob], [0], [], [])
+ 
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor,public callee.cob], [0], [], [])
+AT_CHECK([$COMPILE_MODULE -fnot-reserved=double,float,new,volatile,xor,public callee2.cob], [0], [], [])
+AT_CHECK([$COMPILE -fnot-reserved=double,float,new,volatile,xor,public -o prog caller.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
@@ -7642,7 +7947,7 @@ AT_DATA([prog.cob], [
        01  x PIC 9.
 
        PROCEDURE DIVISION.
-           COMPUTE x = 10
+           COMPUTE x = 10 ON SIZE ERROR CONTINUE
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-LOCATION)
            DISPLAY FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
@@ -10633,6 +10938,61 @@ AT_CHECK([$DIFF reference_append trace_append.txt], [0], [], [])
 AT_CLEANUP
 
 
+AT_SETUP([dump feature with faulting field])
+AT_KEYWORDS([stack stacktrace SOURCE_DATE_EPOCH])
+
+AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
+
+# A bad (non-NULL) address faults while dumping a field:
+# the rest of the record is skipped and the dump goes on
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID. prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01  P            USAGE POINTER.
+       01  BEFORE-FLD   PIC X(4) VALUE "FRST".
+       01  BAD-GRP      BASED.
+           05  BAD-FLD  PIC X(4).
+           05  BAD-FLD2 PIC X(4).
+       01  AFTER-FLD    PIC X(4) VALUE "LAST".
+       PROCEDURE        DIVISION.
+           SET P UP BY 8
+           SET ADDRESS OF BAD-GRP TO P
+           MOVE "ABCD" TO BAD-FLD
+           STOP RUN.
+])
+
+AT_CHECK([SOURCE_DATE_EPOCH=1011960000 \
+$COMPILE -fdump=ALL prog.cob], [0], [], [])
+
+AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS=halt_on_error=0 \
+COB_DUMP_FILE=dump.txt $COBCRUN_DIRECT ./prog], [ignore], [ignore], [ignore])
+
+AT_CAPTURE_FILE([dump.txt])
+
+# (pointer value not shown, its size depends on the platform;
+#  trailing blanks of the interrupted field line are removed)
+AT_CHECK([sed -n '/^WORKING-STORAGE/,$p' dump.txt | sed -e '/^01        P /d' -e 's/ *$//'], [0],
+[WORKING-STORAGE
+**********************
+77        RETURN-CODE                     +000000000
+01        BEFORE-FLD                     'FRST'
+01        BAD-GRP.
+  05      BAD-FLD
+ >>>> Dump of BAD-GRP aborted! <<<< !!
+**********************
+01        AFTER-FLD                      'LAST'
+
+END OF DUMP - prog
+**********************
+
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([stack and dump feature])
 AT_KEYWORDS([stacktrace configuration COB_STACKTRACE COB_DUMP_FILE CALL SOURCE_DATE_EPOCH])
 
@@ -11920,10 +12280,12 @@ AT_DATA([prog.cob], [
            PERFORM check-x-val
 
            COMPUTE x = 30000
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            MOVE ZERO TO x
            ADD 30000 TO x
+                ON SIZE ERROR CONTINUE.
            PERFORM check-x-val
 
            GOBACK
@@ -11969,6 +12331,36 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [x IS 30000
 x IS 30000
 x IS 30000
+])
+
+AT_CLEANUP
+
+
+AT_SETUP([MOVE literal to BINARY with -fno-trunc])
+AT_KEYWORDS([runmisc size binary-truncate])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      prog.
+       DATA             DIVISION.
+       WORKING-STORAGE  SECTION.
+       01 X1            PIC 99 COMP.
+       01 X2            PIC S99 COMP.
+       01 X3            PIC 9(5) COMP.
+       PROCEDURE        DIVISION.
+           MOVE 263 TO X1.
+           MOVE 200 TO X2.
+           MOVE 70000 TO X3.
+           DISPLAY X1 " " X2 " " X3.
+           STOP RUN.
+])
+
+AT_CHECK([$COMPILE -fno-trunc prog.cob], [0], [],
+[prog.cob:10: warning: numeric literal exceeds data size
+prog.cob:11: warning: numeric literal exceeds data size
+])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
+[007 -056 0000070000
 ])
 
 AT_CLEANUP
@@ -12072,6 +12464,8 @@ AT_DATA([prog.cob], [
        END PROGRAM "S U B".
 ])
 
+# TODO: move compile-checks out to a syn test
+
 AT_CHECK([$COMPILE prog.cob], [0], [],
 [prog.cob:10: warning: ' SUB ' literal includes leading spaces which are omitted
 prog.cob:10: warning: ' SUB ' literal includes trailing spaces which are omitted
@@ -12088,6 +12482,24 @@ S U B  GOT B
 ],
 [libcob: prog.cob:12: warning: ' SUB' literal includes leading spaces which are omitted
 libcob: prog.cob:16: warning: ' S U B' literal includes leading spaces which are omitted
+])
+
+AT_DATA([bad.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. "".
+       END PROGRAM "".
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. " ".
+       END PROGRAM " ".
+])
+
+AT_CHECK([$COMPILE_ONLY bad.cob], [1], [],
+[bad.cob:3: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:3: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:4: warning: alphanumeric literal has zero length; a SPACE will be assumed
+bad.cob:7: error: invalid PROGRAM-ID ' ' - name cannot begin with space or hyphen
+bad.cob:7: error: redefinition of program ID ' '
 ])
 
 AT_CLEANUP
@@ -12145,9 +12557,11 @@ AT_DATA([prog.cob], [
       *> doesn't exist there...
            CALL "SUB" USING '0'
               ON EXCEPTION CONTINUE.
-      *> go by variable
+      *> go by variable, twice to check for mem-leak bug #1304
            CALL MYRTN     USING 'X'.
+           call myrtn     using 'x'.
            CALL "DIR/SUB" USING 'Y'.
+           call "DIR/SUB" USING 'y'.
       *> as it is already loaded - should work as-is
            CALL "SUB" USING 'Z'.
            CANCEL "SUB"
@@ -12175,13 +12589,17 @@ AT_CHECK([mkdir DIR], [0], [], [])
 AT_CHECK([$COMPILE_MODULE sub.cob -o DIR/SUB.$COB_MODULE_EXT], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
+SUB GOT x
 SUB GOT Y
+SUB GOT y
 SUB GOT Z
 SUB GOT 0
 ], [])
 AT_CHECK([COB_PHYSICAL_CANCEL=Y COB_PROF_ENABLE=0 $COBCRUN_DIRECT ./prog], [0],
 [SUB GOT X
+SUB GOT x
 SUB GOT Y
+SUB GOT y
 SUB GOT Z
 ], [])
 
@@ -12954,7 +13372,7 @@ AT_DATA([prog.cob], [
            END-IF.
            STOP RUN.
 ])
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COMPILE -fno-ec=size-overflow prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 [Simple Compute  RSLT IS 400
@@ -13074,7 +13492,7 @@ AT_DATA([prog.cob], [
            DISPLAY 'Subtract RSLT    IS ' RSLT.
            MOVE 0 TO RSLT
            ADD NUM-A NUM-C TO RSLT GIVING RSLTV1.
-           DISPLAY 'Add      RSLTv9  IS ' RSLTV1
+           DISPLAY 'Add      RSLTv9  IS ' RSLTV1.
            MULTIPLY NUM-A BY NUM-C GIVING RSLT.
            DISPLAY 'Multiply RSLT    IS ' RSLT.
            MULTIPLY RSLT BY NUM-C.
@@ -13110,7 +13528,7 @@ AT_DATA([prog.cob], [
            STOP RUN.
 ])
 
-AT_CHECK([$COMPILE -farithmetic-osvs prog.cob], [0], [],
+AT_CHECK([$COMPILE -fno-ec=size-overflow -farithmetic-osvs prog.cob], [0], [],
 [prog.cob: in paragraph 'MAIN':
 prog.cob:19: warning: precision of result may change with arithmetic-osvs
 prog.cob:21: warning: precision of result may change with arithmetic-osvs
@@ -13605,30 +14023,20 @@ AT_DATA([prog.cob], [
        WORKING-STORAGE SECTION.
        77 note PIC X(05).
        PROCEDURE DIVISION CHAINING note.
-       DISPLAY "This is sent to CONSOLE " note UPON CONSOLE.
-       DISPLAY "This is sent to SYSERR  " note UPON SYSERR.
-       DISPLAY "This is sent to PRINTER " note UPON PRINTER.
-       DISPLAY "This is also sent to CONSOLE " note UPON CONSOLE.
-       DISPLAY "This is also sent to SYSERR  " note UPON SYSERR.
-       DISPLAY "This is also sent to PRINTER " note UPON PRINTER.
-       DISPLAY "This is sent to SYSPUNCH " note UPON SYSPUNCH
-            ON EXCEPTION DISPLAY 'NO ...'        UPON SYSERR.
-       DISPLAY "This is also sent to SYSPUNCH " note UPON SYSPCH
-            ON EXCEPTION DISPLAY ' ... SYSPUNCH' UPON SYSERR.
-       STOP RUN RETURNING 0.
+           DISPLAY "This is sent to CONSOLE " note UPON CONSOLE.
+           DISPLAY "This is sent to SYSERR  " note UPON SYSERR.
+           DISPLAY "This is sent to PRINTER " note UPON PRINTER.
+           DISPLAY "This is also sent to CONSOLE " note UPON CONSOLE.
+           DISPLAY "This is also sent to SYSERR  " note UPON SYSERR.
+           DISPLAY "This is also sent to PRINTER " note UPON PRINTER.
+           DISPLAY "This is sent to SYSPUNCH " note UPON SYSPUNCH
+                ON EXCEPTION DISPLAY 'NO ...'        UPON SYSERR.
+           DISPLAY "This is also sent to SYSPUNCH " note UPON SYSPCH
+                ON EXCEPTION DISPLAY ' ... SYSPUNCH' UPON SYSERR.
+           STOP RUN RETURNING 0.
 ])
 
-AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [],
-[prog.cob:12: warning: start of statement in Area A
-prog.cob:13: warning: start of statement in Area A
-prog.cob:14: warning: start of statement in Area A
-prog.cob:15: warning: start of statement in Area A
-prog.cob:16: warning: start of statement in Area A
-prog.cob:17: warning: start of statement in Area A
-prog.cob:18: warning: start of statement in Area A
-prog.cob:20: warning: start of statement in Area A
-prog.cob:22: warning: start of statement in Area A
-])
+AT_CHECK([$COMPILE -std=ibm prog.cob], [0], [], [])
 
 AT_CHECK([$COBCRUN_DIRECT ./prog PLAIN], [0],
 [This is sent to CONSOLE PLAIN
@@ -13643,6 +14051,9 @@ NO ...
  ... SYSPUNCH
 ])
 
+# ensure the file does not exist for re-runs
+rm -f prt.log
+
 AT_CHECK([COB_DISPLAY_PRINT_PIPE='cat >>prt.log' \
 COB_DISPLAY_PUNCH_FILE='punch.out' \
 $COBCRUN_DIRECT ./prog PIPE.], [0],
@@ -13653,8 +14064,18 @@ This is also sent to CONSOLE PIPE.
 This is also sent to SYSERR  PIPE.
 ])
 
+AT_CHECK([COB_DISPLAY_PRINT_FILE='!prt.log' \
+COB_DISPLAY_PUNCH_FILE='!punch.out' \
+$COBCRUN_DIRECT ./prog PRINT], [0],
+[This is sent to CONSOLE PRINT
+This is also sent to CONSOLE PRINT
+],
+[This is sent to SYSERR  PRINT
+This is also sent to SYSERR  PRINT
+])
+
 AT_CHECK([COB_DISPLAY_PRINT_FILE='prt.log' \
-COB_DISPLAY_PUNCH_FILE='punch.out' \
+COB_DISPLAY_PUNCH_FILE='+punch.out' \
 $COBCRUN_DIRECT ./prog PRINT], [0],
 [This is sent to CONSOLE PRINT
 This is also sent to CONSOLE PRINT
@@ -13668,6 +14089,8 @@ AT_CAPTURE_FILE([prt.log])
 AT_DATA([reference],
 [This is sent to PRINTER PIPE.
 This is also sent to PRINTER PIPE.
+This is sent to PRINTER PRINT
+This is also sent to PRINTER PRINT
 This is sent to PRINTER PRINT
 This is also sent to PRINTER PRINT
 ])
@@ -13684,6 +14107,8 @@ AT_CAPTURE_FILE([punch.out])
 
 AT_DATA([reference],
 [This is sent to SYSPUNCH PRINT
+This is also sent to SYSPUNCH PRINT
+This is sent to SYSPUNCH PRINT
 This is also sent to SYSPUNCH PRINT
 ])
 
@@ -14171,80 +14596,6 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 #       intermediate rounding
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], ignore, [SIZE ERROR raised])
 
-AT_CLEANUP
-
-
-AT_SETUP([EC-SIZE-ZERO-DIVIDE])
-AT_KEYWORDS([misc fundamental exceptions
-DIVIDE COMPUTE EXCEPTION-STATUS])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 0.
-       01  y PIC 9 VALUE 0.
-
-       PROCEDURE DIVISION.
-           DIVIDE x BY y GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           SET LAST EXCEPTION TO OFF
-           IF FUNCTION EXCEPTION-STATUS NOT = SPACES
-              DISPLAY 'Exception is not empty after reset: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           MOVE 0 TO y
-           COMPUTE y = x - 1 / y + 6.5
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-ZERO-DIVIDE'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
-AT_CLEANUP
-
-
-AT_SETUP([EC-SIZE-OVERFLOW])
-AT_KEYWORDS([misc fundamental exceptions])
-
-AT_DATA([prog.cob], [
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. prog.
-
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01  x PIC 9 VALUE 1.
-       01  y PIC 9.
-
-       PROCEDURE DIVISION.
-      *    raise exception checked in previous test
-      *    as it may interfere with the expected exception
-           DIVIDE x BY y GIVING y
-           DIVIDE x BY 0.1 GIVING y
-           IF FUNCTION TRIM(FUNCTION EXCEPTION-STATUS)
-           NOT = 'EC-SIZE-OVERFLOW'
-              DISPLAY 'Wrong/missing exception: '
-                      FUNCTION EXCEPTION-STATUS
-              END-DISPLAY
-           END-IF
-           .
-])
-
-AT_CHECK([$COMPILE prog.cob], [0], [], [])
-AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 AT_CLEANUP
 
 
@@ -15676,8 +16027,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [1.2345E-5 1.2345E-5], [])
 AT_CLEANUP
 
 
-AT_SETUP([LOW/HIGH-VALUE when using non-native program collating sequence])
-AT_KEYWORDS([LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
+AT_SETUP([program collating sequence and LOW/HIGH-VALUE])
+AT_KEYWORDS([runmisc LOW-VALUE HIGH-VALUE ALPHABET EBCDIC ASCII])
 
 # See bug #948 - Comparison with HIGH-VALUE in presence of collating sequences
 
@@ -16011,8 +16362,8 @@ AT_CHECK([$COBCRUN_DIRECT ./prog6], [0],
 AT_CLEANUP
 
 
-AT_SETUP([CHAR/ORD/ORD-MIN/ORD-MAX when using non-native program collating sequence])
-AT_KEYWORDS([CHAR ORD ORD-MIN ORD-MAX ALPHABET])
+AT_SETUP([program collating sequence: intrinsics])
+AT_KEYWORDS([runmisc CHAR ORD ORD-MIN ORD-MAX ALPHABET])
 
 AT_DATA([prog.cob], [
        IDENTIFICATION DIVISION.
@@ -16062,12 +16413,12 @@ AT_CHECK([$COBCRUN_DIRECT ./prog], [0],
 000000001
 000000009
 ], [])
-
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME 0/1 register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+AT_SETUP([registration of runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime
+COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -16078,6 +16429,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
@@ -16123,6 +16475,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 # Sanitizers may get in the way as well - we can at least portably
 # skip some
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 
@@ -16133,7 +16486,7 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
 ])
 AT_CHECK([ASAN_OPTIONS=handle_segv=0 UBSAN_OPTIONS="suppressions=ubsan.supp:halt_on_error=0" \
-COB_SIGNAL_REGIME=1 ./caller], [0], [],
+COB_SIGNAL_REGIME=1 $COBCRUN_DIRECT ./caller], [0], [],
 [
 callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 
@@ -16142,8 +16495,9 @@ callee.cob:8: attempt to reference invalid memory address (signal SIGSEGV)
 AT_CLEANUP
 
 
-AT_SETUP([COB_SIGNAL_REGIME 1/2 don't register runtime signal handler])
-AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime])
+AT_SETUP([skip registration of runtime signal handler])
+AT_KEYWORDS([runmisc cob_call_with_exception_check signal_regime
+COB_SIGNAL_REGIME])
 
 AT_SKIP_IF([test "$HAVE_SIGNAL_H" != "yes"])
 
@@ -16154,6 +16508,7 @@ AT_DATA([callee.cob], [
        LINKAGE SECTION.
        01 VAR1 PIC X(4) VALUE "TEST".
        PROCEDURE DIVISION USING VAR1.
+           INITIALIZE VAR1 ALL TO VALUE. *> AIX: only a write faults
            DISPLAY VAR1.
            STOP RUN RETURNING 0.
 ])
@@ -16214,6 +16569,7 @@ AT_CHECK([$COMPILE_MODULE callee.cob -fno-ec=all], [0], [], [])
 
 # see note on possibly breaking C/sanitizer runtime checks above
 AT_DATA([ubsan.supp], [
+nonnull-attribute:*
 null:*
 ])
 

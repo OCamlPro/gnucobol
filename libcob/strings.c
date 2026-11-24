@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002-2014, 2016-2020, 2022-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002-2014, 2016-2020, 2022-2026 Free Software Foundation, Inc.
    Written by Keisuke Nishida, Roger While, Edward Hart, Simon Sobisch, Boris
    Eng
 
@@ -1201,7 +1201,7 @@ cob_unstring_into_intern (
 					const struct dlm_struct dlms = st->dlm_list[i];
 					const int     dlsize = (int)dlms.uns_dlm.size;
 					const unsigned char *s2 = s - dlsize + 1;
-					if (p > s2) {
+					if (p >= s2) {
 						continue;
 					}
 					dp = dlms.uns_dlm.data;

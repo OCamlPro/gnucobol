@@ -56,7 +56,7 @@ FILE *fmemopen (void *buf, size_t size, const char *mode);
 	The first is known to be true for some PA-RISC HP-UX 11.11 systems.
 	This is fixed with HP patch PHSS_28871. (There are newer but this
 	fixes dlopen/dlsym problems)
-	The second (no-op dlclose) is the case with musl, see 
+	The second (no-op dlclose) is the case with musl, see
 	https://wiki.musl-libc.org/functional-differences-from-glibc.html#Unloading_libraries
 */
 
@@ -292,20 +292,21 @@ cob_dlopen (const char* filename)
 	}
 	return LoadLibrary (filename);
 #elif	defined(USE_LIBDL)
-	const int flags = cobsetptr->cob_load_global
+	const int flags =
+		cobsetptr->cob_load_visibility == COB_LOAD_VISIBILITY_GLOBAL
 		? RTLD_LAZY | RTLD_GLOBAL
 		: RTLD_LAZY | RTLD_LOCAL;
 
 	return dlopen (filename, flags);
 #else
 	if (advise != NULL) {
-		static int last_cob_load_global = -1;
+		static int last_cob_load_visibility = -1;
 
-		if (cobsetptr->cob_load_global != last_cob_load_global) {
+		if (cobsetptr->cob_load_visibility != last_cob_load_visibility) {
 			int error;
-			last_cob_load_global = cobsetptr->cob_load_global
+			last_cob_load_visibility = cobsetptr->cob_load_visibility;
 
-			if (cobsetptr->cob_load_global) {
+			if (cobsetptr->cob_load_visibility == COB_LOAD_VISIBILITY_GLOBAL) {
 				error = lt_dladvise_global (&advise);
 			} else {
 				error = lt_dladvise_local (&advise);
@@ -587,8 +588,8 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 		base_preload_ptr = preptr;
 	}
 #else
-	/* Use the same logic as above in case the cob_load_global is set to local */
-	if (!cobsetptr->cob_load_global) {
+	/* Use the same logic as above when local visibility is requested. */
+	if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_GLOBAL) {
 		if (last_elem) {
 			last_elem->next = preptr;
 		} else {
@@ -604,7 +605,7 @@ add_to_preload (const char *path, lt_dlhandle libhandle, struct struct_handle *l
 #endif
 
 	if (!cobsetptr->cob_preload_str) {
-		cobsetptr->cob_preload_str = cob_strdup(path);
+		cobsetptr->cob_preload_str = cob_strdup (path);
 	} else {
 		/* +1 to len for PATHSEP_CHAR */
 		const size_t len = strlen (path) + strlen (cobsetptr->cob_preload_str) + 2;
@@ -638,7 +639,7 @@ cache_preload (const char *path)
 		/* Save last element of preload list */
 		if (!preptr->next) last_elem = preptr;
 #endif
-		if (!cobsetptr->cob_load_global) {
+		if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_GLOBAL) {
 			if (!preptr->next) last_elem = preptr;
 		}
 	}
@@ -819,7 +820,7 @@ cob_encode_program_id (const unsigned char *const name,
 	default:
 		break;
 	}
-	
+
 	return pos;
 }
 
@@ -1115,6 +1116,63 @@ cob_set_cancel (cob_module *m)
 	insert (m->module_name, m->module_entry.funcvoid, NULL, m, NULL, 1);
 }
 
+/* try to load specified module from all entries in COB_LIBRARY_PATH
+   (fallback "as-is") */
+static
+int cob_try_preload (const char* module_name)
+{
+	int		ret;
+
+#ifdef	__OS400__
+	char	buff[COB_MEDIUM_BUFF];
+	char	*b = buff;
+	const char	*t;
+
+	for (t = module_name; *t; ++t, ++b) {
+		*b = toupper (*t);
+	}
+	*b = 0;
+
+	module_name = buff;
+#else
+
+	/* normal lookup in COB_LIBRARY_PATH - if that does not look like a full path */
+	if (module_name[0] != SLASH_CHAR
+#ifdef _WIN32
+	 && module_name[0] != '/'
+	 && module_name[1] != ':'
+#endif
+	   ) {
+		/* check if the module ends with module extension */
+		const char *ext = strrchr(module_name, '.');
+		char	buff[COB_MEDIUM_BUFF];
+		size_t	i;
+		if (!ext || strcasecmp(ext + 1, COB_MODULE_EXT) != 0) {
+			/* common case: preload COBOL module */
+			for (i = 0; i < resolve_size; ++i) {
+				snprintf (buff, (size_t)COB_MEDIUM_MAX,
+					"%s%c%s.%s",
+					resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
+				ret = cache_preload (buff);
+				if (ret) {
+					return ret;
+				}
+			}
+		}
+	}
+
+#endif
+	/* If not found, try just using the name as-is (in which case the
+	   extension needs to be included) */
+	ret = cache_preload (module_name);
+
+	if (ret == 0) {
+		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
+	}
+	return ret;
+}
+
+
 void *
 cob_resolve (const char *name)
 {
@@ -1232,7 +1290,7 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 	/* Search the cache */
 	p = lookup (entry);
 	if (p) {
-		return p;
+		goto ccf_exit;
 	}
 
 	/* Check if system routine */
@@ -1242,26 +1300,24 @@ cob_call_field (const cob_field *f, const struct cob_call_struct *cs,
 		while (psyst->syst_name) {
 			if (psyst->syst_hash_val == entry_hash
 			 && !strcmp (psyst->syst_name, entry)) {
-				if (dirent) {
-					cob_free (dirent);
-				}
-				return psyst->syst_call.funcvoid;
+				p = psyst->syst_call.funcvoid;
+				goto ccf_exit;
 			}
 			++psyst;
 		}
 	}
 
 	p = cob_resolve_internal (entry, dirent, fold_case, COB_MODULE_TYPE_PROGRAM, 0);
-	if (dirent) {
-		cob_free (dirent);
-	}
 	if (unlikely(!p)) {
 		if (errind) {
 			cob_call_error ();
 		} else {
 			cob_set_exception (COB_EC_PROGRAM_NOT_FOUND);
-			return NULL;
 		}
+	}
+ccf_exit:
+	if (dirent) {
+		cob_free (dirent);
 	}
 	return p;
 }
@@ -1340,62 +1396,6 @@ cob_cancel_field (const cob_field *f, const struct cob_call_struct *cs)
 		}
 	}
 	cob_cancel (entry);
-}
-
-/* try to load specified module from all entries in COB_LIBRARY_PATH
-   (fallback "as-is") */
-static
-int cob_try_preload (const char* module_name)
-{
-	int		ret;
-
-#ifdef	__OS400__
-	char	buff[COB_MEDIUM_BUFF];
-	char	*b = buff;
-	const char	*t;
-
-	for (t = module_name; *t; ++t, ++b) {
-		*b = toupper (*t);
-	}
-	*b = 0;
-
-	module_name = buff;
-#else
-
-	/* normal lookup in COB_LIBRARY_PATH - if that does not look like a full path */
-	if (module_name[0] != SLASH_CHAR
-#ifdef _WIN32
-	 && module_name[0] != '/'
-	 && module_name[1] != ':'
-#endif
-	   ) {
-		/* check if the module ends with module extension */
-		const char *ext = strrchr(module_name, '.');
-		char	buff[COB_MEDIUM_BUFF];
-		size_t	i;
-		if (!ext || strcasecmp(ext + 1, COB_MODULE_EXT) != 0) {
-			/* common case: preload COBOL module */
-			for (i = 0; i < resolve_size; ++i) {
-				snprintf (buff, (size_t)COB_MEDIUM_MAX,
-					"%s%c%s.%s",
-					resolve_path[i], SLASH_CHAR, module_name, COB_MODULE_EXT);
-				ret = cache_preload (buff);
-				if (ret) {
-					return ret;
-				}
-			}
-		}
-	}
-
-#endif
-	/* If not found, try just using the name as-is (in which case the
-	   extension needs to be included) */
-	ret = cache_preload (module_name);
-
-	if (ret == 0) {
-		cob_runtime_warning (_("preloading of '%s' failed"), module_name);
-	}
-	return ret;
 }
 
 int
@@ -1629,7 +1629,7 @@ cob_call (const char *name, const int argc, void **argv)
 				,pargv[136], pargv[137], pargv[138], pargv[139]
 				,pargv[140], pargv[141], pargv[142], pargv[143]
 				,pargv[144], pargv[145], pargv[146], pargv[147]
-				,pargv[148], pargv[149], pargv[130], pargv[131]
+				,pargv[148], pargv[149], pargv[150], pargv[151]
 				,pargv[152], pargv[153], pargv[154], pargv[155]
 				,pargv[156], pargv[157], pargv[158], pargv[159]
 				,pargv[160], pargv[161], pargv[162], pargv[163]
@@ -1821,12 +1821,13 @@ cob_exit_call (void)
 }
 
 /* iterating over COB_PRE_LOAD (in cob_preload_str) and try to load all
-   contained entries nto global memory space, storing the full list of
-   resolved entries including their path into cob_preload_str  */
+   contained entries with the configured visibility policy, storing the full
+   list of resolved entries including their path into cob_preload_str  */
 static void
 pre_load_once ()
 {
-	const unsigned int	global_load = cobsetptr->cob_load_global;
+	const enum cob_load_visibility	load_visibility =
+		cobsetptr->cob_load_visibility;
 	char	*p, *s;
 
 	/* using temporary buffer as cob_preload_str
@@ -1837,13 +1838,16 @@ pre_load_once ()
 	cob_free (cobsetptr->cob_preload_str);
 	cobsetptr->cob_preload_str = NULL;
 
-	cobsetptr->cob_load_global = 1;	/* pre-loaded libraries are always global */
+	/* Pre-loaded libraries are global unless local visibility is forced. */
+	if (cobsetptr->cob_load_visibility != COB_LOAD_VISIBILITY_LOCAL_ONLY) {
+		cobsetptr->cob_load_visibility = COB_LOAD_VISIBILITY_GLOBAL;
+	}
 	s = strtok (p, PATHSEP_STR);
 	for (; s; s = strtok (NULL, PATHSEP_STR)) {
 		(void)cob_try_preload (s);
 	}
 	cob_free (p);
-	cobsetptr->cob_load_global = global_load;
+	cobsetptr->cob_load_visibility = load_visibility;
 }
 
 void

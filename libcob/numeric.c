@@ -2059,7 +2059,8 @@ cob_decimal_get_field (cob_decimal *d, cob_field *f, const int opt)
 {
 	if (unlikely (d->scale == COB_DECIMAL_NAN)) {
 		if (!cobglobptr->cob_exception_code
-		 || !cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)) {
+		 || (!cob_last_exception_is (COB_EC_SIZE_ZERO_DIVIDE)
+		  && !cob_last_exception_is (COB_EC_SIZE_EXPONENTIATION))) {
 			cob_set_exception (COB_EC_SIZE_OVERFLOW);
 		}
 		return cobglobptr->cob_exception_code;
@@ -4660,14 +4661,15 @@ cob_decimal_pop (const cob_u32_t params, ...)
 #define POW_IMPL(type)	                           \
 {                                                  \
 	register type	ret;                           \
+	if (base == 0 && power <= 0) {                 \
+		/* 0 ^ 0 or 0 ^ -n: rules violated */     \
+		cob_set_exception (COB_EC_SIZE_EXPONENTIATION); \
+		return power == 0 ? 1 : 0;                 \
+	}                                              \
 	if (power == 0 || base == 1 || base == -1) {   \
 		return 1;                                  \
 	}                                              \
 	if (power < 0) {                               \
-		/* division by zero */                     \
-		if (base == 0) {                           \
-			cob_raise (SIGFPE);                    \
-		}                                          \
 		/* too small -> (int)0 */                  \
 		return 0;                                  \
 	}                                              \
@@ -4684,6 +4686,7 @@ cob_s32_pow (cob_s32_t base, cob_s32_t power)
 {
 	POW_IMPL(cob_s32_t)
 }
+
 cob_s64_t
 cob_s64_pow (cob_s64_t base, cob_s64_t power)
 {

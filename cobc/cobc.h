@@ -177,6 +177,10 @@ enum cb_current_date {
 #define	CB_CS_REPOSITORY		(COB_U64_C(1) << 42)
 #define	CB_CS_CALL_USING		(COB_U64_C(1) << 43)	/* within USING phrase of CALL statement */
 #define	CB_CS_READY_OR_RESET		(COB_U64_C(1) << 44)
+#define	CB_CS_CLASS_SPECIFIER		(COB_U64_C(1) << 45)
+#define	CB_CS_INTERFACE_SPECIFIER	(COB_U64_C(1) << 46)
+#define	CB_CS_FACTORY_PARAGRAPH		(COB_U64_C(1) << 47)
+#define	CB_CS_OBJECT_PARAGRAPH		(COB_U64_C(1) << 48)
 
 /* Support for cobc from stdin */
 #define COB_DASH			"-"
@@ -234,6 +238,13 @@ enum cb_binary_size_options {
 enum cb_binary_byteorder_options {
 	CB_BYTEORDER_BIG_ENDIAN = 0,
 	CB_BYTEORDER_NATIVE
+};
+
+/* Byte size of numeric literals passed in CALL */
+enum cb_literal_size_options {
+	CB_LITERAL_SIZE_DYNAMIC = 0,	/* 4 bytes, or 8 if larger */
+	CB_LITERAL_SIZE_32,		/* 4 bytes, truncated */
+	CB_LITERAL_SIZE_64		/* 8 bytes */
 };
 
 /* Type of device specified in ASSIGN clause */
