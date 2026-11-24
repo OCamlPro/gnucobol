@@ -102,7 +102,8 @@ static mpf_t		cob_mpft2;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
-static mpf_t		cob_pi_half;
+static mpf_t		cob_half_pi;
+static mpf_t		cob_two_over_pi;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
 static mpf_t		cob_log_two;
@@ -374,6 +375,8 @@ static const struct winlocale	wintable[] =
 
 #endif
 
+#define COB_COS_DIVIDE_FACTOR	32
+
 static COB_NOINLINE void
 setup_cob_pi (void)
 {
@@ -402,8 +405,12 @@ setup_cob_pi (void)
 	mpf_init2 (cob_pi, COB_PI_LEN);
 	mpf_set_str (cob_pi, cob_pi_str, 10);
 
-	mpf_init2 (cob_pi_half, COB_PI_LEN);
-	mpf_div_2exp (cob_pi_half, cob_pi, 1);
+	mpf_init2 (cob_half_pi, COB_PI_LEN);
+	mpf_div_2exp (cob_half_pi, cob_pi, 1);
+
+	mpf_init2 (cob_two_over_pi, COB_PI_LEN);
+	mpf_set_ui (cob_two_over_pi, 2UL);
+	mpf_div (cob_two_over_pi, cob_two_over_pi, cob_pi);
 
 	set_cob_pi = 1;
 }
@@ -879,12 +886,11 @@ cob_check_numval_f (const cob_field *srcfield)
 static void
 cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3;
+	mpf_t			vf1, vf2;
 	mpf_t			dst_temp;
 	cob_sli_t		expon, i;
 	cob_uli_t		n;
 	cob_u32_t		is_negative;
-
 
 	mpf_init2 (dst_temp, COB_MPF_PREC);
 
@@ -892,7 +898,6 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	mpf_set (vf1, src_val);
 	mpf_init2 (vf2, COB_MPF_PREC);
 	mpf_set_ui (vf2, 1UL);
-	mpf_init2 (vf3, COB_MPF_PREC);
 
 	mpf_set_ui (dst_temp, 1UL);
 
@@ -912,10 +917,11 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	do {
 		mpf_mul (vf2, vf2, vf1);
 		mpf_div_ui (vf2, vf2, (cob_uli_t)n);
-		mpf_set (vf3, dst_temp);
 		mpf_add (dst_temp, dst_temp, vf2);
 		++n;
-	} while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
+	/* O(1) convergence test: vf2's exponent below the
+	   cutoff means it can no longer affect dst_temp */
+	} while (vf2->_mp_exp > -(long)(COB_MPF_CUTOFF + 8) / (long)GMP_NUMB_BITS);
 
 	for (i = 0; i < expon; ++i) {
 		mpf_mul (dst_temp, dst_temp, dst_temp);
@@ -928,7 +934,6 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	mpf_set (dst_val, dst_temp);
 	mpf_clear (dst_temp);
 
-	mpf_clear (vf3);
 	mpf_clear (vf2);
 	mpf_clear (vf1);
 }
@@ -1036,7 +1041,7 @@ cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
 	/* dst_val = (s + 2) * ln2 - pi / (2 * agm) */
 	mpf_mul_ui (dst_val, cob_log_two, (unsigned long)s + 2);
 
-	mpf_div (agm_val, cob_pi_half, agm_val);
+	mpf_div (agm_val, cob_half_pi, agm_val);
 	mpf_sub (dst_val, dst_val, agm_val);
 
 	mpf_clear (agm_val);
@@ -1060,102 +1065,148 @@ cob_mpf_log10 (mpf_t dst_val, const mpf_t src_val)
 	mpf_clear (dst_temp);
 }
 
-/* Sin function */
-/* sin (x) = (reduce to pi/2) */
-/* {n = 0, ...} ( (-1 ^ n) * ( x ^ (2n + 1)) / (2n + 1) ) */
+/* Takes an angle X as input and calculates the angle Y reduced to [0;PI/2]  */
+/* such that abs( cos(X) ) = abs( cos(Y) ) and abs( sin(X) ) = abs( sin(Y) ) */
+/* and returns the quadrant to which the initial angle belongs (from 0 to 3) */
 
-static void
-cob_mpf_sin (mpf_t dst_val, const mpf_t src_val)
+static cob_u16_t
+cob_normalize_angle (mpf_t dst, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3, vf4, vf5;
-	mpf_t			dst_temp;
-	cob_uli_t		arcquad;
-	cob_uli_t		n;
-	int			sign;
+	mpf_t k;
+	unsigned long n;
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
-	if (!set_cob_pi) setup_cob_pi ();
-
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_init2 (vf4, COB_MPF_PREC);
-	mpf_init2 (vf5, COB_MPF_PREC);
-	sign = mpf_sgn (src_val);
-
-	mpf_abs (vf4, src_val);
-	mpf_set (vf3, cob_pi);
-	mpf_div_2exp (vf3, vf3, 1UL);
-	mpf_div (vf1, vf4, vf3);
-	mpf_floor (vf4, vf1);
-
-	if (mpf_cmp_ui (vf4, 4UL) >= 0) {
-		mpf_div_2exp (vf2, vf4, 2UL);
-		mpf_floor (vf2, vf2);
-		mpf_mul_2exp (vf2, vf2, 2UL);
-		mpf_sub (vf2, vf4, vf2);
-	} else {
-		mpf_set (vf2, vf4);
+	const int sign = mpf_sgn (src_val);
+	if (sign == 0) {
+		mpf_set_ui (dst, 0UL);
+		return 0;
 	}
 
-	arcquad = mpf_get_ui (vf2);
-	mpf_sub (vf2, vf1, vf4);
-	mpf_mul (vf4, vf3, vf2);
+	mpf_abs (dst, src_val);		/* dst = abs(src_val) */
 
-	if (arcquad > 1) {
-		sign = -sign;
-	}
-	if (arcquad & 1) {
-		mpf_sub (vf4, vf3, vf4);
-	}
+	mpf_init2 (k, COB_MPF_PREC);
 
-	mpf_mul (vf3, vf4, vf4);
-	mpf_neg (vf3, vf3);
+	/* Get quadrant: k = trunc(dst * 2/pi), n = k mod 4 */
+	mpf_mul (k, dst, cob_two_over_pi);	/* cob_two_over_pi = 2/pi, precomputed */
+	mpf_trunc (k, k);
+	n = mpf_get_ui (k) & 3UL;
 
-	n = 1;
-	mpf_set_ui (vf2, 1UL);
-	mpf_set_ui (dst_temp, 1UL);
+	/* Compute the reduced angle: dst = dst - k*PI/2 */
+	mpf_mul (k, k, cob_half_pi);
+	mpf_sub (dst, dst, k);
 
-	do {
-		++n;
-		mpf_div_ui (vf2, vf2, n);
-		++n;
-		mpf_div_ui (vf2, vf2, n);
-		mpf_mul (vf2, vf2, vf3);
-		mpf_set (vf5, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-	} while (!mpf_eq (vf5, dst_temp, COB_MPF_PREC));
-
-	mpf_mul (dst_temp, dst_temp, vf4);
-	if (sign < 0) {
-		mpf_neg (dst_temp, dst_temp);
+	/* Process quadrant */
+	if (n & 1) {
+		/* if n odd we have to get the complementary angle */
+		mpf_sub (dst, cob_half_pi, dst);
 	}
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	if (sign == -1) {
+		n = 3 - n;
+	}
 
-	mpf_clear (vf5);
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	mpf_clear (k);
+
+	return n;
 }
 
 /* Cos function */
-/* cos (x) = sin ((pi / 2) - x) */
+/* cos(x) = ( 1 - x^2/2 + x^4/4! - x^6/6! ...*/
+/* (x) = (reduced to pi/2) */
+/* The angle is divided by 2^COB_COS_DIVIDE to make it closer to 0 */
+/* We use the equality cos(2X) = 2*cos^2(X)-1 to have the final value*/
 
 static void
 cob_mpf_cos (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t		vf1;
+	mpf_t			term, angle, dst_temp;
+	cob_u16_t		arcquad;
+	cob_uli_t		n;
+	long			div_factor;
 
-	mpf_init2 (vf1, COB_MPF_PREC);
 	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_set (vf1, cob_pi);
-	mpf_div_2exp (vf1, vf1, 1UL);
-	mpf_sub (vf1, vf1, src_val);
-	cob_mpf_sin (dst_val, vf1);
+	mpf_init2 (angle, COB_MPF_PREC);
+	mpf_init2 (term, COB_MPF_CUTOFF + 8);
+	mpf_init2 (dst_temp, COB_MPF_CUTOFF + 8);
+
+	arcquad = cob_normalize_angle (angle, src_val);
+
+	/* Divide n time by 2 */
+	mpf_get_d_2exp (&div_factor, angle);
+	div_factor = (long)COB_COS_DIVIDE_FACTOR + div_factor;
+
+	if (div_factor > 0){
+		mpf_div_2exp (angle, angle, div_factor);
+	} else
+	if (div_factor < 0) {
+		div_factor = 0; 	/* angle tiny enough*/
+	}
+
+	mpf_mul (angle, angle, angle);
+
+	/* compute first term */
+	mpf_set (dst_temp, angle);
+	mpf_div_ui (dst_temp, dst_temp, 2UL);
+	mpf_neg (dst_temp, dst_temp);
+	mpf_set (term, dst_temp); /* init first term to -x^2/2 */
+	mpf_add_ui (dst_temp, dst_temp, 1UL);
+
+	n = 4;
+	do {
+		const cob_uli_t	j = (n - 1UL) * n;
+
+		mpf_mul (term, term, angle);
+		mpf_div_ui (term, term, j);
+		mpf_neg (term, term);
+
+		mpf_add (dst_temp, dst_temp, term);
+
+		n += 2;
+
+	/* O(1) convergence test: term's exponent below the
+	   cutoff means it can no longer affect dst_temp,
+	   note: as angle can be zero, we need an additional check here */
+	} while (term->_mp_size != 0
+	      && term->_mp_exp > -(long)(COB_MPF_CUTOFF + 8) / (long)GMP_NUMB_BITS);
+
+	/*  Undo the division: apply cos(2x) = 2*cos(x)^2 - 1, div_factor times */
+	while (div_factor > 0) {
+		mpf_mul (dst_temp, dst_temp, dst_temp);
+		mpf_mul_ui (dst_temp, dst_temp, 2UL);
+		mpf_sub_ui (dst_temp, dst_temp, 1UL);
+		div_factor--;
+	}
+
+	if (arcquad == 1 || arcquad == 2)  {
+		mpf_neg (dst_temp, dst_temp);
+	}
+
+	mpf_set (dst_val, dst_temp);
+
+	mpf_clear (term);
+	mpf_clear (angle);
+	mpf_clear (dst_temp);
+}
+
+/* sin function */
+/* sin(X) = cos( PI/2 - X) */
+
+static void
+cob_mpf_sin (mpf_t dst_val, const mpf_t src_val)
+{
+	mpf_t		vf1;
+
+	if (!set_cob_pi) setup_cob_pi ();
+
+	mpf_init2 (vf1, COB_MPF_PREC);
+
+	/* compute complementary angle = PI/2 - Angle */
+	mpf_set (vf1, cob_half_pi);
+	if (mpf_sgn (src_val)) {
+		mpf_sub (vf1, vf1, src_val);
+	}
+
+	cob_mpf_cos (dst_val, vf1);
 
 	mpf_clear (vf1);
 }
@@ -1185,7 +1236,7 @@ cob_mpf_tan (mpf_t dst_val, const mpf_t src_val)
 static void
 cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3, vf4;
+	mpf_t			vf1, vf2, vf3;
 	mpf_t			dst_temp;
 	cob_uli_t		n;
 
@@ -1196,41 +1247,49 @@ cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 	mpf_init2 (vf1, COB_MPF_PREC);
 	mpf_init2 (vf2, COB_MPF_PREC);
 	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_init2 (vf4, COB_MPF_PREC);
 
 	mpf_abs (vf1, src_val);
 	mpf_add_ui (vf3, cob_sqrt_two, 1UL);
 
 	if (mpf_cmp (vf1, vf3) > 0) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_2exp (dst_temp, dst_temp, 1UL);
+		mpf_set (dst_temp, cob_half_pi);
 		mpf_ui_div (vf1, 1UL, vf1);
 		mpf_neg (vf1, vf1);
 	} else {
+		mpf_t		vf4;
+		mpf_init2 (vf4, COB_MPF_PREC);
 		mpf_sub_ui (vf4, cob_sqrt_two, 1UL);
 		if (mpf_cmp (vf1, vf4) > 0) {
-			mpf_set (dst_temp, cob_pi);
-			mpf_div_2exp (dst_temp, dst_temp, 2UL);
+			mpf_set (dst_temp, cob_half_pi);
+			mpf_div_2exp (dst_temp, dst_temp, 1UL);
 			mpf_sub_ui (vf3, vf1, 1UL);
 			mpf_add_ui (vf4, vf1, 1UL);
 			mpf_div (vf1, vf3, vf4);
 		} else {
 			mpf_set_ui (dst_temp, 0UL);
 		}
+		mpf_clear (vf4);
 	}
 	mpf_mul (vf2, vf1, vf1);
 	mpf_neg (vf2, vf2);
 	mpf_add (dst_temp, dst_temp, vf1);
+
+	mpf_set_prec_raw (vf1, COB_MPF_CUTOFF + 8);
+	mpf_set_prec_raw (vf3, COB_MPF_CUTOFF + 8);
 
 	n = 1;
 
 	do {
 		mpf_mul (vf1, vf1, vf2);
 		mpf_div_ui (vf3, vf1, 2ULL * n + 1);
-		mpf_set (vf4, dst_temp);
 		mpf_add (dst_temp, dst_temp, vf3);
 		++n;
-	} while (!mpf_eq (vf4, dst_temp, COB_MPF_PREC));
+
+	/* O(1) convergence test: vf3's exponent below the
+	   cutoff means it can no longer affect dst_temp,
+	   note: as vf3 can be zero, we need an additional check here */
+	} while (vf3->_mp_size != 0
+	      && vf3->_mp_exp > -(long)(COB_MPF_CUTOFF + 8) / (long)GMP_NUMB_BITS);
 
 	if (mpf_sgn (src_val) < 0) {
 		mpf_neg (dst_temp, dst_temp);
@@ -1239,7 +1298,10 @@ cob_mpf_atan (mpf_t dst_val, const mpf_t src_val)
 	mpf_set (dst_val, dst_temp);
 	mpf_clear (dst_temp);
 
-	mpf_clear (vf4);
+	/* restore declared precision before clearing the vars */  
+	mpf_set_prec_raw (vf3, COB_MPF_PREC);
+	mpf_set_prec_raw (vf1, COB_MPF_PREC);
+
 	mpf_clear (vf3);
 	mpf_clear (vf2);
 	mpf_clear (vf1);
@@ -1258,8 +1320,7 @@ cob_mpf_asin (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_cmp_ui (src_val, 1UL) || !mpf_cmp_si (src_val, -1L)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
 		if (mpf_sgn (src_val) < 0) {
 			mpf_neg (dst_temp, dst_temp);
 		}
@@ -1267,11 +1328,13 @@ cob_mpf_asin (mpf_t dst_val, const mpf_t src_val)
 		mpf_clear (dst_temp);
 		return;
 	}
+#if 0 /* can't happen, checked in the single caller */
 	if (mpz_sgn (src_val) == 0) {
 		mpf_set_ui (dst_val, 0UL);
 		mpf_clear (dst_temp);
 		return;
 	}
+#endif
 
 	mpf_init2 (vf1, COB_MPF_PREC);
 	mpf_init2 (vf2, COB_MPF_PREC);
@@ -1306,8 +1369,7 @@ cob_mpf_acos (mpf_t dst_val, const mpf_t src_val)
 	if (!set_cob_pi) setup_cob_pi ();
 
 	if (!mpf_sgn (src_val)) {
-		mpf_set (dst_temp, cob_pi);
-		mpf_div_ui (dst_temp, dst_temp, 2UL);
+		mpf_set (dst_temp, cob_half_pi);
 		mpf_set (dst_val, dst_temp);
 		mpf_clear (dst_temp);
 		return;
@@ -7350,7 +7412,8 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_pi) {
 		mpf_clear (cob_pi);
-		mpf_clear (cob_pi_half);
+		mpf_clear (cob_half_pi);
+		mpf_clear (cob_two_over_pi);
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
