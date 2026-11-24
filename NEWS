@@ -177,6 +177,9 @@ NEWS - user visible changes				-*- outline -*-
 ** New option --gentable to build EBCDIC/ASCII translation tables,
    for use with -febcdic-table
 
+** New warning -Wmove-alnum-to-num (not enabled by -Wall or -Wextra) for
+   MOVE of an alphanumeric item to a numeric item
+
 ** Option -ftab-width can now receive a list of comma-separated widths,
    such as "6,1,4", indicating the width of each tabulation, the last one
    being reused for all the next ones

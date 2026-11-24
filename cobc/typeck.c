@@ -12125,6 +12125,9 @@ validate_move (cb_tree src, cb_tree dst, const unsigned int is_value, int *move_
 		case CB_CATEGORY_ALPHANUMERIC:
 			switch (CB_TREE_CATEGORY (dst)) {
 			case CB_CATEGORY_NUMERIC:
+				move_warning (src, dst, is_value, cb_warn_move_alnum_to_num, 1,
+					_("MOVE of alphanumeric item to numeric item"));
+				/* Fall through */
 			case CB_CATEGORY_NUMERIC_EDITED:
 				if (size > (int)fdst->pic->digits) {
 					goto size_overflow_2;
