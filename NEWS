@@ -16,25 +16,25 @@ NEWS - user visible changes				-*- outline -*-
 ** support for XML PARSE
    Events sent to COBOL code try to follow as closely as possible what IBM
    does with a few differences linked to internal XML engine differences:
-   - we cannot guarantee that incomplete CONTENT-CHARACTERS and 
-     ATTRIBUTE-CHARACTERS XML-EVENTS will be sent at the same time, 
+   - we cannot guarantee that incomplete CONTENT-CHARACTERS and
+     ATTRIBUTE-CHARACTERS XML-EVENTS will be sent at the same time,
      and cut in the same place as with IBM's parser.
      GnuCOBOL can merge short CONTENT-CHARACTERS events together across
      END-OF-INPUT chunks boundary.
-   - For the EXCEPTION XML-EVENT, the reported XML-CODE will often only 
+   - For the EXCEPTION XML-EVENT, the reported XML-CODE will often only
      correspond to generic error or warning instead of the full error code.
      In COMPAT mode, generic warnings use code 99 and generic errors use 201.
-     In XMLNSS mode, the low order bits for generic errors and warnings are 
+     In XMLNSS mode, the low order bits for generic errors and warnings are
      set to zero.
      Moreover, for those generic exceptions, XML-TEXT will contain the error
      text as reported by libxml2.
      We may map more of libxml2's errors on IBM's error codes in the future.
-   - The order between EXCEPTION events and other events is not guaranteed 
+   - The order between EXCEPTION events and other events is not guaranteed
      to be the same as with an IBM parser.
    For most codebases, we do not expect those differences to break existing
    COBOL code.
-   Support for XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING 
-   is experimental, remain untested and will show a warning at compile time 
+   Support for XML PARSE RETURNING NATIONAL and XML PARSE VALIDATING
+   is experimental, remain untested and will show a warning at compile time
    when used.
 
 ** at runtime, fatal size exception codes now fail when activated (with
@@ -207,11 +207,12 @@ NEWS - user visible changes				-*- outline -*-
    $b for executable basename, $d for date in YYYYMMDD format, $t for time
    in HHMMSS format (before, only $$ was available for pid)
 
-** Introduction of the COB_LOAD_GLOBAL boolean flag, which determines whether
-   the symbols of dynamically loaded shared libraries are made available
-   globally to other shared objects or remain confined locally. Previously,
-   this behavior depended on the underlying platform, where the default was
-   often "global." The default behavior is now explicitly set to "local".
+** introduction of the COB_LOAD_VISIBILITY setting, which controls symbol
+   visibility for dynamically loaded shared libraries;
+   previously, this behavior depended on the underlying platform,
+   where the default was often "global";
+   the completely new option LOCAL_ONLY is mainly introduced to make GnuCOBOL
+   usable with dlmopen from glibc (for details see runtime.cfg)
 
 * New build features
 

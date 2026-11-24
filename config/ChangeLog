@@ -1,8 +1,20 @@
 
+2026-11-17  Simon Sobisch <simonsobisch@gnu.org>
+
+	* runtime.cfg: document new "unsafe" runtime file handling (disabling
+	  flush and close/reopen)
+
 2026-11-10  David Declerck <david.declerck@ocamlpro.com>
 
 	* *.conf: new options call-literal-byteorder and call-literal-size,
 	  big-endian and 32 in mf-, ibm-, mvs-, gcos- and rm-strict.conf
+
+2026-11-06  Oğuzcan Kırmemiş <oguzcan.kirmemis@gmail.com>
+
+	* runtime.cfg: rename COB_LOAD_GLOBAL (load_global) to
+	  COB_LOAD_VISIBILITY (load_visibility)
+	* runtime.cfg (COB_LOAD_VISIBILITY): document LOCAL_PREFERRED, GLOBAL and
+	  LOCAL_ONLY modes and their numeric equivalents
 
 2026-10-30  Simon Sobisch <simonsobisch@gnu.org>
 

@@ -538,6 +538,14 @@ static struct config_enum never[] = {{"never", "!"}, {NULL, NULL}};
 static struct config_enum beepopts[] = {{"FLASH", "1"}, {"SPEAKER", "2"}, {"FALSE", "9"}, {"BEEP", "0"}, {NULL, NULL}};
 static struct config_enum timeopts[] = {{"0", "1000"}, {"1", "100"}, {"2", "10"}, {"3", "1"}, {NULL, NULL}};
 static struct config_enum syncopts[] = {{"P", "1"}, {NULL, NULL}};
+#ifndef _WIN32
+static struct config_enum loadopts[] = {
+	{"LOCAL_PREFERRED", "0"},
+	{"GLOBAL", "1"},
+	{"LOCAL_ONLY", "2"},
+	{NULL, NULL}
+};
+#endif
 static struct config_enum varseqopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
 static struct config_enum sighdlrregopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {NULL, NULL}};
 static struct config_enum coeopts[] = {{"0", "0"}, {"1", "1"}, {"2", "2"}, {"3", "3"}, {NULL, NULL}};
@@ -560,7 +568,7 @@ static struct config_tbl gc_conf[] = {
 	{"COB_LIBRARY_PATH", "library_path", 	NULL, 	NULL, GRP_CALL, ENV_PATH, SETPOS (cob_library_path)}, /* default value set in cob_init_call() */
 	{"COB_PRE_LOAD", "pre_load", 		NULL, 	NULL, GRP_CALL, ENV_STR, SETPOS (cob_preload_str)},
 #ifndef _WIN32
-	{"COB_LOAD_GLOBAL", "load_global", "0", NULL, GRP_CALL, ENV_BOOL, SETPOS(cob_load_global)},
+	{"COB_LOAD_VISIBILITY", "load_visibility", "0", loadopts, GRP_CALL, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_load_visibility)},
 #endif
 	{"COB_BELL", "bell", 			"0", 	beepopts, GRP_SCREEN, ENV_UINT | ENV_ENUMVAL, SETPOS (cob_beep_value)},
 	{"COB_DEBUG_LOG", "debug_log", 		NULL, 	NULL, GRP_HIDE, ENV_FILE, SETPOS (cob_debug_log)},
@@ -978,6 +986,15 @@ cob_terminate_routines (void)
 	 && cobsetptr->cob_display_punch_filename) {
 		fclose (cobsetptr->cob_display_punch_file);
 		cobsetptr->cob_display_punch_file = NULL;
+	}
+	/* close print file if configured as non-safe
+	   and by that kept open (commonly that file would be external) */
+	if (cobsetptr->cob_display_print_file
+	 && cobsetptr->cob_display_print_filename
+	 && cobsetptr->cob_display_print_filename[0] == '!'
+	 && cobsetptr->cob_display_print_filename[1]) {
+		fclose (cobsetptr->cob_display_print_file);
+		cobsetptr->cob_display_print_file = NULL;
 	}
 
 	cob_exit_screen ();
@@ -2491,6 +2508,11 @@ cob_open_logfile (const char *filename)
 {
 	const char *mode;
 
+	/* ignore "unsage" / "no flushing" indicator */
+	if (*filename == '!') {
+		filename++;
+	}
+
 	if (!cobsetptr->cob_unix_lf) {
 		if (*filename == '+') {
 			filename++;
@@ -2517,7 +2539,8 @@ cob_check_trace_file (void)
 		return;
 	}
 	if (cobsetptr->cob_trace_filename) {
-		cobsetptr->cob_trace_file = cob_open_logfile (cobsetptr->cob_trace_filename);
+		cobsetptr->cob_trace_file
+			= cob_open_logfile (cobsetptr->cob_trace_filename);
 		if (!cobsetptr->cob_trace_file) {
 			/* could not open the file
 			   unset the filename for not referencing it later */
@@ -3068,6 +3091,14 @@ get_stmt_from_name (const char *stmt_name)
 
 }
 
+void
+cob_flush_if_not_disabled (FILE *stream, const char *name_option)
+{
+	if (name_option == NULL || *name_option != '!') {
+		fflush (stream);
+	}
+}
+
 /* cob_set_location is kept for backward compatibility (pre 3.0);
    it stored the location for exception handling and related
    intrinsic functions and did tracing, depending on a global flag */
@@ -3113,7 +3144,8 @@ cob_set_location (const char *sfile, const unsigned int sline,
 			 "Program-Id: %-16s Statement: %-21.21s  Line: %u\n",
 			 s, cstatement ? (char *)cstatement : _("unknown"),
 			 sline);
-		fflush (cobsetptr->cob_trace_file);
+		cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+			cobsetptr->cob_trace_filename);
 	}
 }
 
@@ -3157,7 +3189,8 @@ cob_trace_section (const char *para, const char *source, const int line)
 		} else {
 			fprintf (cobsetptr->cob_trace_file, "%s\n", para);
 		}
-		fflush (cobsetptr->cob_trace_file);
+		cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+			cobsetptr->cob_trace_filename);
 	}
 }
 
@@ -3263,7 +3296,8 @@ cob_trace_print (char *val)
 		}
 	}
 	fputc ('\n', cobsetptr->cob_trace_file);
-	fflush (cobsetptr->cob_trace_file);
+	cob_flush_if_not_disabled (cobsetptr->cob_trace_file, 
+		cobsetptr->cob_trace_filename);
 }
 
 void
@@ -6071,8 +6105,13 @@ cob_display_env_value (const cob_field *f)
 		cob_set_exception (COB_EC_IMP_DISPLAY);
 		return;
 	}
-	/* Rescan term/screen variables */
-	cob_rescan_env_vals ();
+
+	/* consider using cb_lookup_config - or a variant only checking env name,
+	   then set that instead of full env rescan each time */
+	if (strncmp ("COB", cob_local_env, 3) == 0) {	
+		/* Rescan term/screen variables */
+		cob_rescan_env_vals ();
+	}
 }
 
 void
@@ -8169,6 +8208,10 @@ cob_expand_env_string (const char *strval)
 	char		ename[128] = { '\0' };
 	char		*penv;
 
+	if (strchr (strval, '$') == NULL) {
+		return cob_strdup (strval);
+	}
+
 	env = cob_malloc (envlen);
 	for (k = 0; strval[k] != 0; k++) {
 		/* String almost full?; Expand it */
@@ -8705,11 +8748,13 @@ get_config_val (char *value, int pos, char *orgvalue)
 		if (data_loc == offsetof (cob_settings, cob_display_print_filename)
 		 && cobsetptr->cob_display_print_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
-		} else if (data_loc == offsetof (cob_settings, cob_display_punch_filename)
+		} else
+		if (data_loc == offsetof (cob_settings, cob_display_punch_filename)
 		 && cobsetptr->cob_display_punch_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
-		} else if(data_loc == offsetof (cob_settings, cob_trace_filename)
-		      && cobsetptr->external_trace_file) {
+		} else
+		if (data_loc == offsetof (cob_settings, cob_trace_filename)
+		&& cobsetptr->external_trace_file) {
 			snprintf (value, COB_MEDIUM_MAX, _("set by %s"), "cob_set_runtime_option");
 		} else if (str == NULL) {
 			snprintf (value, COB_MEDIUM_MAX, _("not set"));
@@ -8788,6 +8833,7 @@ get_config_val (char *value, int pos, char *orgvalue)
 static int
 cb_lookup_config (char *keyword)
 {
+	/* TODO: uppercase + lowercase keyword with a-z, then cmp with a-z0-9_- */
 	int	i;
 	for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 		if (gc_conf[i].conf_name
@@ -8903,7 +8949,7 @@ cb_config_entry (char *buf, int line)
 		cob_free (str);
 		for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 			if (gc_conf[i].env_name
-			&& strcasecmp (value, gc_conf[i].env_name) == 0) {/* no longer cleared by runtime.cfg */
+			 && strcasecmp (value, gc_conf[i].env_name) == 0) {/* no longer cleared by runtime.cfg */
 				gc_conf[i].data_type &= ~STS_ENVCLR;
 				break;
 			}
@@ -8915,7 +8961,7 @@ cb_config_entry (char *buf, int line)
 		if ((getenv (value)) != NULL ) {
 			for (i = 0; i < NUM_CONFIG; i++) {		/* Set value from config file */
 				if (gc_conf[i].env_name
-				&& strcasecmp (value, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
+				 && strcasecmp (value, gc_conf[i].env_name) == 0) {	/* Catch using env var name */
 					gc_conf[i].data_type |= STS_ENVCLR;
 					break;
 				}
@@ -8925,8 +8971,8 @@ cb_config_entry (char *buf, int line)
 		return 0;
 	}
 
-	if (strcasecmp (keyword, "include") == 0 ||
-		strcasecmp (keyword, "includeif") == 0) {
+	if (strcasecmp (keyword, "include") == 0
+	 || strcasecmp (keyword, "includeif") == 0) {
 		str = cob_expand_env_string (value);
 		strcpy (buf, str);
 		cob_free (str);
@@ -8950,8 +8996,8 @@ cb_config_entry (char *buf, int line)
 		if (gc_conf[i].default_val) {
 			set_config_val ((char *)gc_conf[i].default_val, i);
 		} else if ((gc_conf[i].data_type & ENV_STR)
-			|| (gc_conf[i].data_type & ENV_FILE)
-			|| (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path stored as a string */
+		        || (gc_conf[i].data_type & ENV_FILE)
+		        || (gc_conf[i].data_type & ENV_PATH)) {	/* String/Path stored as a string */
 			data = (void *) ((char *)cobsetptr + gc_conf[i].data_loc);
 			memcpy (&str, data, sizeof (char *));
 			if (str != NULL) {
@@ -11424,6 +11470,7 @@ cob_dump_module (char *reason)
 			 && cobsetptr->cob_trace_filename != NULL
 			 && !cobsetptr->external_trace_file) {
 				fname = cobsetptr->cob_trace_filename;
+				if (*fname == '!') fname++;
 			}
 			if (fname != NULL) {
 				fputc ('\n', COB_STDERR);
