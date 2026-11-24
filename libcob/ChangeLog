@@ -1,4 +1,15 @@
 
+2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,
+	  simplified tiny case
+	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_mpf_log):
+	  new constant cob_pi_half
+
+	assisted by Devin.AI via DeepWiki
+	* intrinsic.c (cob_agm_log): pre-compute iterations instead of
+	  running mpf equality checks
+
 2026-11-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* call.c (cob_call_field): fix leak of directory-path on re-execution
@@ -49,6 +60,10 @@
 	* common.c, common.h, coblocal.h, call.c: rename COB_LOAD_GLOBAL to
 	  COB_LOAD_VISIBILITY and update related configuration and enum names
 
+2026-10-31  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): simplify for tiny number
+
 2026-10-31  Simon Sobisch <simonsobisch@gnu.org>
 
 	* strings.c (cob_unstring_into_intern): fix overflow for multiple UNSTRING
@@ -91,6 +106,12 @@
 	* intrinsic.c: all formatted date/time functions correctly verify their
 	  given format now, instead of ignoring invalid data after a valid format
 	  specifier
+
+2026-10-25  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_log): implement a faster new algorithm
+	* intrinsic.c (cob_agm_log): new function needed for cob_mpf_log, along
+	  with its new macro COB_LN_PREC for ln precision threshold
 
 2026-10-16  David Declerck <david.declerck@ocamlpro.com>
 

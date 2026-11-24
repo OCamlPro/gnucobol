@@ -1,6 +1,7 @@
 /*
    Copyright (C) 2005-2012, 2014-2024, 2026 Free Software Foundation, Inc.
-   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin
+   Written by Roger While, Simon Sobisch, Edward Hart, Brian Tiffin,
+   Denis Hugonnard-Roche
 
    This file is part of GnuCOBOL.
 
@@ -64,6 +65,7 @@
 #include <locale.h>
 #endif
 
+
 /* Function prototypes */
 static cob_u32_t	integer_of_date (const int, const int, const int);
 static void		get_iso_week (const int, int *, int *);
@@ -87,8 +89,8 @@ static cob_decimal	d4;
 static cob_decimal	d5;
 
 #ifndef DISABLE_GMP_RANDOM
-static mpf_t			rand_float;	/* Hold our random float numbers */
-static gmp_randstate_t	rand_state;			/* Random generator state object */
+static mpf_t			rand_float; 	/* Hold our random float numbers */
+static gmp_randstate_t	rand_state; 	/* Random generator state object */
 #endif
 static int		rand_needs_seeding = 1;
 
@@ -100,8 +102,10 @@ static mpf_t		cob_mpft2;
 static mpf_t		cob_mpft_get;
 
 static mpf_t		cob_pi;
+static mpf_t		cob_pi_half;
 static mpf_t		cob_sqrt_two;
 static mpf_t		cob_log_half;
+static mpf_t		cob_log_two;
 static mpf_t		cob_log_ten;
 static int		set_cob_pi;
 static int		set_cob_sqrt_two;
@@ -397,6 +401,10 @@ setup_cob_pi (void)
 
 	mpf_init2 (cob_pi, COB_PI_LEN);
 	mpf_set_str (cob_pi, cob_pi_str, 10);
+
+	mpf_init2 (cob_pi_half, COB_PI_LEN);
+	mpf_div_2exp (cob_pi_half, cob_pi, 1);
+
 	set_cob_pi = 1;
 }
 
@@ -462,6 +470,10 @@ setup_cob_log_half (void)
 
 	mpf_init2 (cob_log_half, COB_LOG_HALF_LEN);
 	mpf_set_str (cob_log_half, cob_log_half_str, 10);
+
+	mpf_init2 (cob_log_two, COB_LOG_HALF_LEN);
+	mpf_neg (cob_log_two, cob_log_half) ;
+
 	set_cob_log_half = 1;
 }
 
@@ -921,65 +933,113 @@ cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
 	mpf_clear (vf1);
 }
 
-/* Log function */
-/* logn (x) = {n = 1, ...} ( ((1 - x) ^ n) / n ) */
+/*
+ * AGM (Arithmetic-Geometric Mean):
+ * The AGM of two positive numbers a and b is the common limit
+ * of two sequences defined iteratively by:
+ *   a_(n+1) = (a_n + b_n) / 2
+ *   b_(n+1) = sqrt(a_n * b_n)
+ */
+static void
+cob_agm_log (mpf_t dst_val, const mpf_t val_2)
+{
+	mpf_t a_avg;
+	mpf_t g_avg;
+	mpf_t temp;
+	unsigned long iter;
 
+	mpf_init2 (a_avg, COB_MPF_CUTOFF + 8);
+	mpf_init2 (g_avg, COB_MPF_CUTOFF + 8);
+	mpf_init2 (temp, COB_MPF_CUTOFF + 8);
+
+	mpf_set_ui (a_avg, 1UL);
+	mpf_set (g_avg, val_2);
+
+	/* AGM converges quadratically: ~log2(precision) iterations suffice.
+	   Add a few extra for safety. */
+	{
+		unsigned long n;
+		for (n = COB_MPF_CUTOFF, iter = 0; n > 1; n >>= 1)
+			iter++;
+		iter += 4;
+	}
+
+	while (iter--) {
+		mpf_mul (temp, a_avg, g_avg);   /* a*g before updating a */
+
+		mpf_add (a_avg, a_avg, g_avg);
+		mpf_div_2exp (a_avg, a_avg, 1);
+
+		mpf_sqrt (g_avg, temp);
+	}
+
+	mpf_set (dst_val, a_avg);
+
+	mpf_clear (a_avg);
+	mpf_clear (g_avg);
+	mpf_clear (temp);
+}
+
+/*
+* COB_LN_PREC: argument-reduction shift for the AGM log.
+*
+* ln(x) = pi / (2 * AGM(1, 2^(s+2) / x)) - s * ln(2)
+*
+* For P correct decimal digits the AGM needs
+*     s = P * log2(10)/2 - log2(x) + 1.
+* Worst case over x (x < 1 is handled via ln(1/x)):
+*     s_max = P * log2(10)/2 + 1.
+* With P = PREC / log2(10) this simplifies to
+*     s_max = PREC/2 + 1.
+*/
+#define COB_LN_PREC  ((unsigned long) ((COB_MPF_CUTOFF / 2UL) + 1UL) )
+
+/* Log function (internal computation) */
+/* Instead of computing a series, we use the AGM method :
+ *
+ * ln(x) = ln(2^s * x) - s * ln(2)
+ *       = (pi * x^(s - 2)) / (2 * AGM(x^(s - 2), 1)) - s * ln(2)
+ *
+ * See https://www.hvks.com/Numerical/Downloads/HVE%20Fast%20Log()%20calculation%20for%20arbitrary%20precision.pdf
+ */
 static void
 cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3, vf4;
-	mpf_t			dst_temp;
-	cob_sli_t		expon;
-	cob_uli_t		n;
-
-
+	long s;
+	mpf_t agm_val;
 
 	if (mpf_sgn (src_val) <= 0 || !mpf_cmp_ui (src_val, 1UL)) {
+		/* CHECKME: which caller can pass this data? */
 		mpf_set_ui (dst_val, 0UL);
 		return;
 	}
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
 	if (!set_cob_log_half) setup_cob_log_half ();
+	if (!set_cob_pi) setup_cob_pi ();
 
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_init2 (vf3, COB_MPF_PREC);
-	mpf_set_si (vf3, -1L);
-	mpf_init2 (vf4, COB_MPF_PREC);
+	mpf_init2 (agm_val, COB_MPF_CUTOFF + 8);
 
-	mpf_set_ui (dst_temp, 0UL);
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon != 0) {
-		mpf_set (dst_temp, cob_log_half);
-		if (expon > 0) {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)expon);
-			mpf_neg (dst_temp, dst_temp);
-			mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
-		} else {
-			mpf_mul_ui (dst_temp, dst_temp, (cob_uli_t)-expon);
-			mpf_mul_2exp (vf1, vf1, (cob_uli_t)-expon);
-		}
+	/* Reduce argument for faster convergence:
+	   write x = n * 2^s with n in [0.5, 1], then
+	   scale by an extra 2^COB_LN_PREC. */
+	mpf_get_d_2exp (&s, src_val);
+	s += COB_LN_PREC;
+	if (s < 0) {
+		/* src_val < 2^-COB_LN_PREC: already small enough, no scaling */
+		s = 0;
 	}
-	mpf_ui_sub (vf1, 1UL, vf1);
+	mpf_div_2exp (dst_val, src_val, (unsigned long)s);
 
-	n = 1;
-	do {
-		mpf_mul (vf3, vf3, vf1);
-		mpf_div_ui (vf2, vf3, n);
-		mpf_set (vf4, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf4, dst_temp, COB_MPF_CUTOFF));
+	/* consider move to mpfr_agm, after MPFR integration */
+	cob_agm_log (agm_val, dst_val);
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	/* dst_val = (s + 2) * ln2 - pi / (2 * agm) */
+	mpf_mul_ui (dst_val, cob_log_two, (unsigned long)s + 2);
 
-	mpf_clear (vf4);
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	mpf_div (agm_val, cob_pi_half, agm_val);
+	mpf_sub (dst_val, dst_val, agm_val);
+
+	mpf_clear (agm_val);
 }
 
 /* Log10 function */
@@ -1454,7 +1514,7 @@ calculate_start_end_for_numval (cob_field *srcfield,
 	unsigned char *p = srcfield->data;
 	register unsigned char *p_end;
 
-	if (srcfield->size == 0 
+	if (srcfield->size == 0
 	 || p == NULL) {
 		return 0;
 	}
@@ -1499,7 +1559,7 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 	/* note: versions before 3.2 did a pre-validation here,
 			 we now parse "as valid as possible" by default
 			 (the testsuite checks both variants) */
-#ifdef INVALID_NUMVAL_IS_ZERO 
+#ifdef INVALID_NUMVAL_IS_ZERO
 	/* Validate source field */
 	if (cob_check_numval (srcfield, currency, type == NUMVAL_C, 0)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
@@ -1528,7 +1588,7 @@ numval (cob_field *srcfield, cob_field *currency, const enum numval_type type)
 		/* Should this truncate or raise an exception?
 		   What about COBOL2025 new max? */
 		datasize = COB_MAX_DIGITS;
-		p = p_end - COB_MAX_DIGITS + 1; 
+		p = p_end - COB_MAX_DIGITS + 1;
 #endif
 	}
 
@@ -3463,7 +3523,7 @@ cob_check_numval (const cob_field *srcfield, const cob_field *currency,
 				if (prev < '0' || prev > '9') {
 					return n + 1;
 				}
-				
+
 			} else if (n < (int)max_pos - 1) {
 				/* no digit seen so far: must be at next position */
 				const char next = *(p + 1);
@@ -5020,7 +5080,7 @@ cob_intr_numval_f (cob_field *srcfield)
 	/* note: versions before 3.2 did a pre-validation here,
 	         we now parse "as valid as possible" by default
 	         (the testsuite checks both variants) */
-#ifdef INVALID_NUMVAL_IS_ZERO 
+#ifdef INVALID_NUMVAL_IS_ZERO
 	/* Validate source field */
 	if (cob_check_numval_f (srcfield)) {
 		cob_set_exception (COB_EC_ARGUMENT_FUNCTION);
@@ -6388,7 +6448,7 @@ cob_intr_lowest_algebraic (cob_field *srcfield)
 			cob_alloc_set_field_uint (0);
 			break;
 		}
-		if (COB_FIELD_REAL_BINARY (srcfield) 
+		if (COB_FIELD_REAL_BINARY (srcfield)
 		|| !COB_FIELD_BINARY_TRUNC (srcfield)) {
 			expo = (cob_uli_t)((COB_FIELD_SIZE (srcfield) * 8U) - 1U);
 			mpz_ui_pow_ui (d1.value, 2UL, expo);
@@ -6459,7 +6519,7 @@ cob_intr_highest_algebraic (cob_field *srcfield)
 
 	case COB_TYPE_NUMERIC_BINARY:
 	case COB_TYPE_NUMERIC_COMP5:
-		if (COB_FIELD_REAL_BINARY (srcfield) 
+		if (COB_FIELD_REAL_BINARY (srcfield)
 		|| !COB_FIELD_BINARY_TRUNC (srcfield)) {
 			expo = COB_FIELD_SIZE (srcfield) * 8U;
 			if (COB_FIELD_HAVE_SIGN (srcfield)) {
@@ -6885,7 +6945,7 @@ cob_intr_test_formatted_datetime (cob_field *format_field,
 	if (format_len < 6) {
 		goto invalid_args;
 	}
-	
+
 	field_len = cob_field_to_string (datetime_field, formatted_datetime,
 					  COB_DATETIMESTR_MAX, CCM_NONE);
 	/* Field errors or zero-length -> exception */
@@ -7290,9 +7350,11 @@ cob_exit_intrinsic (void)
 	}
 	if (set_cob_pi) {
 		mpf_clear (cob_pi);
+		mpf_clear (cob_pi_half);
 	}
 	if (set_cob_log_half) {
 		mpf_clear (cob_log_half);
+		mpf_clear (cob_log_two);
 	}
 	if (set_cob_log_ten) {
 		mpf_clear (cob_log_ten);

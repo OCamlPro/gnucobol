@@ -148,7 +148,8 @@ Note: also defined together with __clang__ in both frontends:
 #define COB_MPF_PREC		2048UL
 
 /* Complex calculation cutoff value */
-/* This MUST be <= COB_MPF_PREC */
+/* This MUST be <= COB_MPF_PREC
+   and should be a multiple of 8 */
 #define COB_MPF_CUTOFF		1024UL
 
 
