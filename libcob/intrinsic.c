@@ -1038,7 +1038,7 @@ cob_mpf_log (mpf_t dst_val, const mpf_t src_val)
 	/* dst_val = (s + 2) * ln2 - pi / (2 * agm) */
 	mpf_mul_ui (dst_val, cob_log_two, (unsigned long)s + 2);
 
-	mpf_div (agm_val, cob_pi_half, agm_val);
+	mpf_div (agm_val, cob_half_pi, agm_val);
 	mpf_sub (dst_val, dst_val, agm_val);
 
 	mpf_clear (agm_val);

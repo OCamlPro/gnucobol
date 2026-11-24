@@ -3,8 +3,6 @@
 
 	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,
 	  simplified tiny case
-	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_mpf_log):
-	  new constant cob_pi_half
 
 	assisted by Devin.AI via DeepWiki
 	* intrinsic.c (cob_agm_log): pre-compute iterations instead of
@@ -63,7 +61,7 @@
 2026-11-01  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_mpf_cos): correct error that prevent optimization
-	change COB_COS_DIVIDE value and fix typo
+	  change COB_COS_DIVIDE value
 
 2026-10-31  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
@@ -277,19 +275,16 @@
 
 2026-04-10  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
-	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic): add cob_half_pi
-	  constant
-	* intrinsic.c (cob_normalize_angle): simplify & optimize, use
-	  cob_half_pi
-	* intrinsic.c (cob_mpf_xxxx: sin, cos, acos, asin, atan): use cob_half_pi
+	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_mpf_log):
+	  add cob_half_pi constant
+	* intrinsic.c (cob_normalize_angle, cob_mpf_sin, cob_mpf_cos, cob_mpf_acos,
+	  cob_mpf_asin, cob_mpf_atan): simplify & optimize, use cob_half_pi
 
 2026-04-04  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_normalize_angle): new_function
-	* intrinsic.c (cob_mpf_cos): better performabce with use of
+	* intrinsic.c (cob_mpf_cos, cob_mpf_sin): better performance with use of
 	  cob_normalize_angle
-	* intrinsic.c (cob_mpf_sin): better performabce with use of
-	  cob_mpf_sin
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
