@@ -1,8 +1,17 @@
 
-2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
+2026-11-25  Simon Sobisch <simonsobisch@gnu.org>
 
-	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,
-	  simplified tiny case
+	* fileio.c (unique_copy): replaced by plain memcpy
+	* fileio.c (sort_cmps): replaced manual loop for non-collation with memcmp
+	* fileio.c (sort_cmp_col): renamed from sort_cmps, caller adjusted to
+	  only use this if collation is active
+	* fileio.c (cob_file_sort_compare, cob_read_item, cob_free_list):
+	  refactored for easier debugging / slightly better performance
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: only do optional file handling 
+	  if the ISAM file is reported as not existing
+
+2026-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
 	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_normalize_angle):
 	  new constant cob_two_over_pi
 	* intrinsic.c (cob_mpf_cos): slight loop and reorder optimization
@@ -10,8 +19,6 @@
 	  unnecessary init/clear
 
 	assisted by Devin.AI via DeepWiki
-	* intrinsic.c (cob_agm_log): pre-compute iterations instead of
-	  running mpf equality checks
 	* intrinsic.c (cob_normalize_angle): drop temp vars, calculate quadrant
 	  via mpf
 	* intrinsic.c (cob_mpf_exp, cob_mpf_cos, cob_mpf_atan): drop temp var for
@@ -19,6 +26,15 @@
 	  for that directly
 	* intrinsic.c (cob_mpf_atan): decrease precision in series calculation,
 	  similar to what is used in cob_mpf_cos
+
+2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,
+	  simplified tiny case
+
+	assisted by Devin.AI via DeepWiki
+	* intrinsic.c (cob_agm_log): pre-compute iterations instead of
+	  running mpf equality checks
 
 2026-11-21  Simon Sobisch <simonsobisch@gnu.org>
 

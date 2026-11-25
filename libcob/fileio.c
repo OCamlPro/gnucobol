@@ -485,6 +485,9 @@ struct cobitem {
 	unsigned char		unique[sizeof (size_t)];
 	unsigned char		item[1];
 };
+/* note: "unique" is actually a size_t, but we fread
+   this together with the item data, so we memcpy
+   this unaligned data where we need it */
 
 /* Sort memory chunk */
 struct sort_mem_struct {
@@ -4520,7 +4523,8 @@ dobuild:
 				freefh (fh);
 				return COB_STATUS_61_FILE_SHARING;
 			}
-			if (f->flag_optional) {
+			if (f->flag_optional
+			 && ISERRNO = ENOENT) {
 				if (mode == COB_OPEN_EXTEND
 				 || mode == COB_OPEN_I_O) {
 					dobld = 1;
@@ -7874,79 +7878,69 @@ cob_sys_file_delete (unsigned char *file_name, unsigned char *file_type)
 /* SORT */
 
 static int
-sort_cmps (const unsigned char *s1, const unsigned char *s2, const size_t size,
+sort_cmp_col (const unsigned char *s1, const unsigned char *s2, const size_t size,
 	   const unsigned char *col)
 {
 	size_t		i;
-	int 		ret;
-
-	if (unlikely (col)) {
-		for (i = 0; i < size; ++i) {
-			if ((ret = col[s1[i]] - col[s2[i]]) != 0) {
-				return ret;
-			}
-		}
-	} else {
-		for (i = 0; i < size; ++i) {
-			if ((ret = s1[i] - s2[i]) != 0) {
-				return ret;
-			}
+	for (i = 0; i < size; ++i) {
+		const int 	ret = col[s1[i]] - col[s2[i]];
+		if (ret) {
+			return ret;
 		}
 	}
 	return 0;
-}
-
-static COB_INLINE void
-unique_copy (unsigned char *s1, const unsigned char *s2)
-{
-	size_t	size = sizeof (size_t);
-	do {
-		*s1++ = *s2++;
-	} while (--size);
 }
 
 static int
 cob_file_sort_compare (struct cobitem *k1, struct cobitem *k2, void *pointer)
 {
 	cob_file	*f = pointer;
+	unsigned char *k1_rec = k1->item;
+	unsigned char *k2_rec = k2->item;
 	size_t		i;
-	size_t		u1;
-	size_t		u2;
 
+	/* TODO: at the start of the SORT we should "combine" consecutive
+	   key fields that can be memcmp'd directly (all of alphanumeric + national
+	   as well as unsigned big-endian binary and unsigned numeric-display),
+	   mind the colation - if given only same data-type can be "combined */
 	for (i = 0; i < f->nkeys; ++i) {
+		cob_file_key *key = &f->keys[i];
+		cob_field	f1, f2;
 		int		cmp;
-		cob_field	f1;
-		cob_field	f2;
-		f1 = f2 = *(f->keys[i].field);
-		f1.data = k1->item + f->keys[i].offset;
-		f2.data = k2->item + f->keys[i].offset;
+		f1 = f2 = *(key->field);
+		f1.data = k1_rec + key->offset;
+		f2.data = k2_rec + key->offset;
 		if (unlikely (COB_FIELD_IS_NUMERIC (&f1))) {
 			cmp = cob_numeric_cmp (&f1, &f2);
-		} else {
-			cmp = sort_cmps (f1.data, f2.data, f1.size,
+		} else
+		if (unlikely (f->sort_collating)) {
+			cmp = sort_cmp_col (f1.data, f2.data, f1.size,
 					 f->sort_collating);
+		} else {
+			cmp = memcmp (f1.data, f2.data, f1.size);
 		}
 		if (cmp != 0) {
-			return (f->keys[i].flag == COB_ASCENDING) ? cmp : -cmp;
+			return (key->flag == COB_ASCENDING) ? cmp : -cmp;
 		}
 	}
-	unique_copy ((unsigned char *)&u1, k1->unique);
-	unique_copy ((unsigned char *)&u2, k2->unique);
-	if (u1 < u2) {
-		return -1;
+
+	/* same key, so first element wins */
+	{
+		size_t	u1, u2;
+
+		memcpy (&u1, k1->unique, sizeof (size_t));
+		memcpy (&u2, k2->unique, sizeof (size_t));
+
+		return (u1 < u2) ? -1 : 1;
 	}
-	return 1;
 }
 
 static void
 cob_free_list (struct cobsort *hp)
 {
-	struct sort_mem_struct	*s1;
-	struct sort_mem_struct	*s2;
-
-	s1 = hp->mem_base;
-	for (; s1;) {
-		s2 = s1;
+	struct sort_mem_struct	*s1 = hp->mem_base;
+	while (s1) {
+		struct sort_mem_struct	*s2 = s1;
 		s1 = s1->next;
 		cob_free (s2->mem_ptr);
 		cob_free (s2);
@@ -8101,13 +8095,14 @@ static int
 cob_read_item (struct cobsort *hp, const int n)
 {
 	FILE	*fp = hp->file[n].fp;
+	struct queue_struct	queue = hp->queue[n];
 
 	if (getc (fp) != 0) {
-		hp->queue[n].first->end_of_block = 1;
+		queue.first->end_of_block = 1;
 	} else {
-		hp->queue[n].first->end_of_block = 0;
+		queue.first->end_of_block = 0;
 		/* LCOV_EXCL_START */
-		if (unlikely (fread (hp->queue[n].first->unique,
+		if (unlikely (fread (queue.first->unique,
 				hp->r_size, (size_t)1, fp) != 1)) {
 			return 1;
 		}
@@ -8324,7 +8319,7 @@ cob_file_sort_submit (struct cobsort *hp, const unsigned char *p)
 	}
 	q = cob_new_item (hp, sizeof (struct cobitem) + hp->size);
 	q->end_of_block = 1;
-	unique_copy (q->unique, (const unsigned char *)&(hp->unique));
+	memcpy (q->unique, &(hp->unique), sizeof (size_t));
 	hp->unique++;
 	memcpy (q->item, p, hp->size);
 	if (hp->queue[0].count <= hp->queue[1].count) {
