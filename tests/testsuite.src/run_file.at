@@ -12060,6 +12060,92 @@ CLOSE STATUS:0/48
 AT_CLEANUP
 
 
+AT_SETUP([EXTFH: error status from file handler])
+AT_KEYWORDS([runfile EXTFH callfh])
+
+AT_DATA([prog.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TSTFILE ASSIGN TO "testfile"
+                  ORGANIZATION IS SEQUENTIAL.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  TSTFILE.
+       01  TSTREC  PIC X(10).
+       PROCEDURE DIVISION.
+           OPEN INPUT TSTFILE.
+           DISPLAY "not reached".
+           STOP RUN.
+])
+
+AT_DATA([prog2.cob], [
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. prog2.
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TSTFILE ASSIGN TO "testfile"
+                  ORGANIZATION IS SEQUENTIAL
+                  FILE STATUS IS FS.
+       DATA DIVISION.
+       FILE SECTION.
+       FD  TSTFILE.
+       01  TSTREC  PIC X(10).
+       WORKING-STORAGE SECTION.
+       01  FS      PIC XX.
+       PROCEDURE DIVISION.
+       DECLARATIVES.
+       ERR SECTION.
+           USE AFTER ERROR PROCEDURE ON TSTFILE.
+           DISPLAY "declarative " FS.
+       END DECLARATIVES.
+       MAIN SECTION.
+           OPEN INPUT TSTFILE.
+           DISPLAY "open 1: " FS.
+           OPEN INPUT TSTFILE.
+           DISPLAY "open 2: " FS.
+           STOP RUN.
+])
+
+# handler: status 37 on first call, 00 afterwards
+AT_DATA([cmod.c], [[
+#include <libcob.h>
+
+static int calls = 0;
+
+COB_EXT_EXPORT int
+TSTFH (unsigned char *opcode, FCD3 *fcd)
+{
+   (void)opcode;
+   if (calls++ == 0) {
+      fcd->fileStatus[0] = '3';
+      fcd->fileStatus[1] = '7';
+   } else {
+      fcd->fileStatus[0] = '0';
+      fcd->fileStatus[1] = '0';
+   }
+   return 0;
+}
+]])
+
+AT_CHECK([$COMPILE -fcallfh=TSTFH prog.cob cmod.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [1], [],
+[libcob: prog.cob:14: error: permission denied (status = 37) for file TSTFILE ('testfile') on OPEN
+])
+
+AT_CHECK([$COMPILE -fcallfh=TSTFH prog2.cob cmod.c], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog2], [0],
+[declarative 37
+open 1: 37
+open 2: 00
+], [])
+
+AT_CLEANUP
+
+
 AT_SETUP([EXTFH: auto-conversion FCD2 <-> FCD3 on 32bit])
 
 # FIXME: check for missing record / file pointer address should be

@@ -1,4 +1,11 @@
 
+2026-11-25  David Declerck <david.declerck@ocamlpro.com>
+
+	* fileio.c (update_fcd_to_file): set cob_error_file, fixing a crash
+	  on an error status from a -fcallfh handler
+	* fileio.c (update_fcd_to_file): clear the exception on success, fixing
+	  error declaratives run again after a successful -fcallfh operation
+
 2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,

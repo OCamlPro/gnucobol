@@ -9290,6 +9290,7 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 	if (wasOpen >= 0) {
 		const int status_code_1 = isdigit(fcd->fileStatus[0])
 			? COB_D2I (fcd->fileStatus[0]) : 9;
+		cobglobptr->cob_error_file = f;
 		if (status_code_1 != 0
 		 || cob_last_exception_is (COB_EC_I_O_EOP)) {
 			/* EOP is non-fatal therefore 00 status but needs exception;
@@ -9297,6 +9298,8 @@ update_fcd_to_file (FCD3* fcd, cob_file *f, cob_field *fnstatus, int wasOpen)
 			   as EXTFH, in every other case we currently can't set EOP;
 			   also note that fcd->lineCount is never read/set */
 			cob_set_exception (status_exception[status_code_1]);
+		} else {
+			cobglobptr->cob_exception_code = 0;
 		}
 		if (f->file_status) {
 			memcpy (f->file_status, fcd->fileStatus, 2);
