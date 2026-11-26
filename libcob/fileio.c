@@ -178,7 +178,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
    the segment data is located after the header, is addressed via a void pointer */
 
    #define EYE_BALL_SIZE					8
-   
+
    typedef struct _SEG_HDR
    {
 	   #ifdef _DEBUG
@@ -190,7 +190,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 		cob_u64_t			seg_data_rel_start;
 		cob_u64_t			seg_data_rel_end;
 	}SEG_HDR,		*PSEG_HDR;
-	
+
 	typedef struct _HEAP_ENTRY
 	{
 		#ifdef _DEBUG
@@ -204,7 +204,7 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 		cob_u64_t		total_alloc;
 		cob_u64_t		total_data_alloc;
 	}HEAP_ENTRY,	*PHEAP_ENTRY;
-	
+
 	/* TODO: make heap_array dynamic */
 	#define MAX_HEAP		512
 	/* list of available heaps for VFILE routines,
@@ -213,9 +213,9 @@ static	vb_rtd_t *vbisam_rtd = NULL;
 	static HEAP_ENTRY		heap_array[MAX_HEAP] = {{ 0 }};
 
 	#ifdef	WITH_ANY_ISAM
-	
+
 	/* Isam File handler packet */
-	
+
 	struct indexfile {
 		char		*filename;	/* ISAM data file name */
 		char		*savekey;	/* Area to save last primary key read */
@@ -4524,7 +4524,7 @@ dobuild:
 				return COB_STATUS_61_FILE_SHARING;
 			}
 			if (f->flag_optional
-			 && ISERRNO = ENOENT) {
+			 && ISERRNO == ENOENT) {
 				if (mode == COB_OPEN_EXTEND
 				 || mode == COB_OPEN_I_O) {
 					dobld = 1;
@@ -4705,8 +4705,8 @@ dobuild:
 #if	0	/* RXWRXW - Access check BDB Human */
 		ret = access (runtime_buffer, checkvalue);
 		if (ret != 0) {
-			if (errno == ENOENT &&
-			    (mode == COB_OPEN_OUTPUT || f->flag_optional == 1)) {
+			if (errno == ENOENT
+			 && (mode == COB_OPEN_OUTPUT || f->flag_optional == 1)) {
 				ret = 0;
 				/* Check here if the directory exists ? */
 #if	0	/* RXWRXW - Check dir */
@@ -9002,7 +9002,7 @@ cob_init_fileio (cob_global *lptr, cob_settings *sptr)
 }
 
 void
-cob_settings_fileio (void) 
+cob_settings_fileio (void)
 {
 #ifdef WITH_DB
 	if (bdb_env) {
