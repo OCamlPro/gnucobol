@@ -1,4 +1,9 @@
 
+2026-11-23  Ramy George <ramygeorge19@gmail.com>
+
+	* README.md: Comprehensive documentation for tools such as 
+	  perf, rr, valgrind and callgrind.
+
 2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* perf_aggregate.sh: skip binary files, prefer awk over external bc binary

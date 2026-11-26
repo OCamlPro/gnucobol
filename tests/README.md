@@ -1,4 +1,4 @@
-This is a brief introduction to the various tool that can be used when doing dev work on GnuCOBOL.
+This is a brief introduction to the various tools that can be used when doing development work on GnuCOBOL.
 ================
 
 Getting started:
