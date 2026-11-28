@@ -5196,3 +5196,146 @@ AT_CHECK([$COMPILE prog.cob], [0], [], [])
 AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
 
 AT_CLEANUP
+
+
+AT_SETUP([FUNCTION EXP additionnal check])
+AT_KEYWORDS([functions])
+
+AT_DATA([prog.cob], [
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID . prog .
+      *>----------------------------------------------------------------
+      *> Additional test for exp function
+      *
+      * Test input integer whose value is "high"
+      * from   80 to  87
+      *>----------------------------------------------------------------
+      *>
+       ENVIRONMENT DIVISION.
+       DATA DIVISION .
+       WORKING-STORAGE  SECTION.
+
+       01 I-1       PIC  9(38) COMP-3  .
+       01 I-2       PIC  9(1)V9(37) COMP-3  .
+      *>
+       01  FILLER       USAGE BINARY-INT VALUE 0.
+           88 DO-DISP   VALUE 0.
+           88 NO-DISP   VALUE 1.
+       REPLACE ==DISPLAY== BY ==IF DO-DISP  DISPLAY==,
+               ==END-DISPLAY== BY ==END-DISPLAY END-IF==.
+      *>
+       PROCEDURE DIVISION .
+      *>------------------
+      *>
+           PERFORM DO-CHECK.
+       >> IF CHECK-PERF IS DEFINED
+           SET  NO-DISP    TO TRUE
+      *    performance checks
+           PERFORM DO-CHECK 500 TIMES.
+       >> END-IF
+
+           GOBACK .
+
+      *>
+       DO-CHECK .
+      *>--------
+      *>
+      *> test 1
+      *>
+           MOVE FUNCTION EXP(87) TO I-1 .
+           IF I-1 NOT = 60760302250568721495223289381302760752
+           THEN
+               DISPLAY '1: <' I-1 '> != <'
+                       '60760302250568721495223289381302760752>'
+           END-IF.
+      *>
+      *> test 2
+      *>
+           MOVE FUNCTION EXP(86) TO I-1 .
+           IF I-1 NOT = 22352466037347150474430657323327147398
+           THEN
+               DISPLAY '2: <' I-1 '> != <'
+                       '22352466037347150474430657323327147398>'
+           END-IF.
+      *>
+      *> test 3
+      *>
+           MOVE FUNCTION EXP(85) TO I-1 .
+           IF I-1 NOT = 8223012714622913510304328016407774695
+           THEN
+               DISPLAY '3: <' I-1 '> != <'
+                       '8223012714622913510304328016407774695>'
+           END-IF.
+      *>----------------------------------------------------------------
+      *>
+      *> test 4
+      *>
+           MOVE FUNCTION EXP(-85) TO I-2 .
+           IF I-2 NOT = 0.0000000000000000000000000000000000001
+           THEN
+               DISPLAY '4: <' I-2 '> != <'
+                       '0.0000000000000000000000000000000000001>'
+           END-IF.
+      *>
+      *> test 5
+      *>
+           MOVE FUNCTION EXP(-84) TO I-2 .
+           IF I-2 NOT = 0.0000000000000000000000000000000000003
+           THEN
+               DISPLAY '5: <' I-2 '> != <'
+                       '0.0000000000000000000000000000000000003>'
+           END-IF.
+      *>
+      *> test 6
+      *>
+           MOVE FUNCTION EXP(-83) TO I-2 .
+           IF I-2 NOT = 0.0000000000000000000000000000000000008
+           THEN
+               DISPLAY '6: <' I-2 '> != <'
+           END-IF.
+      *>----------------------------------------------------------------
+      *>
+      *> test 7
+      *>
+           MOVE FUNCTION EXP(0.1) TO I-2 .
+           IF I-2 NOT = 1.1051709180756476248117078264902466682
+           THEN
+               DISPLAY '7: <' I-2 '> != <'
+                       '1.1051709180756476248117078264902466682>'
+           END-IF.
+      *>
+      *> test 8
+      *>
+           MOVE FUNCTION EXP(0.2) TO I-2 .
+           IF I-2 NOT = 1.2214027581601698339210719946396741703
+           THEN
+               DISPLAY '8: <' I-2 '> != <'
+                       '1.2214027581601698339210719946396741703>'
+           END-IF.
+      *>
+      *> test 9
+      *>
+           MOVE FUNCTION EXP(0.0000000001) TO I-2 .
+           IF I-2 NOT = 1.0000000001000000000050000000001666666
+           THEN
+               DISPLAY '9: <' I-2 '> != <'
+                       '1.0000000001000000000050000000001666666>'
+           END-IF.
+      *>
+      *> test 10
+      *>
+           MOVE FUNCTION EXP(-0.0000000001) TO I-2.
+           IF I-2 NOT = 0.9999999999000000000049999999998333333
+           THEN
+               DISPLAY '10: <' I-2 '> != <'
+                       '0.9999999999000000000049999999998333333>'
+           END-IF.
+])
+
+AT_CHECK([$COMPILE prog.cob], [0], [], [])
+AT_CHECK([$COBCRUN_DIRECT ./prog], [0], [], [])
+
+AT_CLEANUP
+
+

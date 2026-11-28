@@ -1,4 +1,12 @@
 
+2026-11-28  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_exp): implement a faster new algorithm
+	  with its new macro COB_EXP_PREC for exp precision threshold
+	* intrinsic.c (cob_mpf_exp_core): new function needed for cob_mpf_exp
+	* intrinsic.c (cob_mpf_exp_sinh): new function needed for cob_mpf_exp
+	* intrinsic.c (cob_mpf_get_mult_log_2): new function needed for cob_mpf_exp
+
 2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,

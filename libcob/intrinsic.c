@@ -29,6 +29,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <math.h>
 #ifdef	HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -71,6 +72,10 @@ static cob_u32_t	integer_of_date (const int, const int, const int);
 static void		get_iso_week (const int, int *, int *);
 static void		cob_mpf_log (mpf_t, const mpf_t);
 static int		get_seconds_past_midnight (void);
+static unsigned long int cob_mpf_get_mult_log_2(mpf_t, const mpf_t);
+static void		cob_mpf_exp_core(mpf_t, const mpf_t);
+static void		cob_mpf_exp(mpf_t, const mpf_t);
+static void		cob_mpf_exp_sinh(mpf_t, const mpf_t);
 
 /* Local variables */
 
@@ -870,69 +875,221 @@ cob_check_numval_f (const cob_field *srcfield)
 	return 0;
 }
 
-/* Trigonometric formulae (formulas?) from Wikipedia */
+
+/*
+ * Entry point function for exponential
+ *
+ * In order to converge faster the argument is reduced to get closer to 0
+ *
+ * 1st step Argument reduction
+ *     src_val = K * ln(2) + R
+ *
+ * 2nd step Argument Reduction
+ *     R <---R / (2^COB_EXP_PREC)
+ *
+ * Then
+ *     Compute EXP( R ) = SINH(X) + SQRT (1 + ( SINH(X)^2) )
+ *
+ * Finally Reconstruct EXP (src_val)
+ *
+*/
 
 
-/* Exp function */
-/* e ^ x = {n = 0, ...} ( (x ^ n) / n! ) */
+/*
+ * COB_EXP_PREC
+ *
+ * As we use sinh taylor series function
+ * the reduction factor is given by
+ *
+ * k = 8 * (2/3*ln2) * ln(P) where P is the precision in number of digits
+ * The precision in number of digits from gmp is given by P = PREC/LOG_BASE_2(10)
+ * NB : 3.32192809 = LOG_BASE_2(10)
+ *
+ * See paper : https://www.hvks.com/Numerical/Downloads/HVE%20Fast%20Hyperbolic%20functions%20for%20arbitrary%20precision.pdf
+ *
+ */
+#define COB_EXP_PREC (unsigned long)(((log((COB_MPF_CUTOFF / 3.32192809))) * (16.0/3.0)) * log(2.0)) + 1UL
 
-static void
-cob_mpf_exp (mpf_t dst_val, const mpf_t src_val)
+void
+cob_mpf_exp(mpf_t result, const mpf_t src_val)
 {
-	mpf_t			vf1, vf2, vf3;
-	mpf_t			dst_temp;
-	cob_sli_t		expon, i;
-	cob_uli_t		n;
-	cob_u32_t		is_negative;
+	mpf_t r;
+	mpf_t vf3;
+	unsigned long n;
+	unsigned long nb_ln_2;
+	long int s;
 
+	const int k_sgn = mpf_sgn (src_val);
 
-	mpf_init2 (dst_temp, COB_MPF_PREC);
+	if (!set_cob_log_half) setup_cob_log_half ();
 
-	mpf_init2 (vf1, COB_MPF_PREC);
-	mpf_set (vf1, src_val);
-	mpf_init2 (vf2, COB_MPF_PREC);
-	mpf_set_ui (vf2, 1UL);
-	mpf_init2 (vf3, COB_MPF_PREC);
+	mpf_init2(r, COB_MPF_PREC);
+	mpf_init2(vf3, COB_MPF_PREC);
 
-	mpf_set_ui (dst_temp, 1UL);
+	mpf_abs(vf3, src_val);
 
-	if (mpf_sgn (vf1) < 0) {
-		mpf_neg (vf1, vf1);
-		is_negative = 1;
-	} else {
-		is_negative = 0;
+	/* reduce arg to accelerate serie convergence */
+	nb_ln_2 = cob_mpf_get_mult_log_2 (r, vf3);
+
+	mpf_get_d_2exp (&s , r);
+	s = s + COB_EXP_PREC;
+	if ( s < 0 ) {
+		/* r < 2^-COB_EXP_PREC: already small enough, no scaling */
+		s = 0;
+	}
+	mpf_div_2exp(r, r, s);
+
+	cob_mpf_exp_core (vf3, r);
+
+	/* Reconstruct  exp(r^(2^s)) */
+	for (n = 0; n < s; n++) {
+		mpf_mul(vf3, vf3, vf3);
 	}
 
-	mpf_get_d_2exp (&expon, vf1);
-	if (expon > 0) {
-		mpf_div_2exp (vf1, vf1, (cob_uli_t)expon);
+	/* Reconstruct  exp(src_val)  */
+	/* = 2^nb_ln_2 * exp(r)       */
+	if (nb_ln_2 > 0) {
+		mpf_mul_2exp(vf3, vf3, nb_ln_2);
 	}
 
-	n = 1;
-	do {
-		mpf_mul (vf2, vf2, vf1);
-		mpf_div_ui (vf2, vf2, (cob_uli_t)n);
-		mpf_set (vf3, dst_temp);
-		mpf_add (dst_temp, dst_temp, vf2);
-		++n;
-	} while (!mpf_eq (vf3, dst_temp, COB_MPF_CUTOFF));
-
-	for (i = 0; i < expon; ++i) {
-		mpf_mul (dst_temp, dst_temp, dst_temp);
+	/* inverse of result is exponant < 0 */
+	if (k_sgn == -1) {
+		mpf_ui_div (vf3, 1UL, vf3);
 	}
 
-	if (is_negative) {
-		mpf_ui_div (dst_temp, 1UL, dst_temp);
-	}
+	mpf_set (result, vf3);
 
-	mpf_set (dst_val, dst_temp);
-	mpf_clear (dst_temp);
+	mpf_clear(r);
+	mpf_clear(vf3);
 
-	mpf_clear (vf3);
-	mpf_clear (vf2);
-	mpf_clear (vf1);
+	return;
 }
 
+/*
+   This function returns an unsigned int k and a remainder r
+   such as src_val = k*ln(2) + r
+   Add 0.5 ensure that abs(r) < ln(2)/2
+*/
+static unsigned long int
+cob_mpf_get_mult_log_2(mpf_t remainder, const mpf_t src_val)
+{
+	unsigned long n;
+	double d;
+
+	d = mpf_get_d (src_val);
+	if (isnan(d) || !isfinite(d)) {
+		/* Should never go trough this branch */
+		if (mpf_cmp (src_val, cob_log_two) > 0) {
+			mpf_t nb_ln_2;
+			mpf_t half;
+
+			mpf_init2 (nb_ln_2, 64);
+			mpf_init2 (half, 64);
+
+			mpf_set_d (half, 0.5);
+
+			mpf_div (nb_ln_2, src_val, cob_log_two);
+			mpf_add (nb_ln_2, nb_ln_2, half);
+			n = mpf_get_ui (nb_ln_2);
+
+			mpf_clear (nb_ln_2);
+			mpf_clear (half);
+		}
+		else {
+			n = 0;
+		}
+	}
+	else {
+		d = d +  0.5;
+		n = d / 0.69314718055994530941;
+	}
+
+	mpf_mul_ui (remainder, cob_log_two, n);
+	mpf_sub (remainder, src_val, remainder);
+
+	return n;
+}
+
+/*
+ * Compute EXP fron SINH
+ *
+ * EXP(x) = SH(x) + SQRT( 1 + (SH(x) ^ 2) )
+ */
+static void
+cob_mpf_exp_core(mpf_t dst_val, const mpf_t src_val)
+{
+	mpf_t sinh;
+
+	mpf_init2(sinh, COB_MPF_CUTOFF+8);
+
+	cob_mpf_exp_sinh (sinh, src_val);
+
+	mpf_mul (dst_val, sinh, sinh);
+	mpf_add_ui (dst_val, dst_val, 1UL);
+	mpf_sqrt (dst_val, dst_val);
+	mpf_add (dst_val, dst_val, sinh);
+
+	mpf_clear(sinh);
+
+	return;
+}
+
+/*
+   SINH by Taylor Series used by cob_mpf_exp
+
+   Can't be used to implement a full sinh function
+   as argument reduction is done before in cob_mpf_exp_core
+*/
+
+static void
+cob_mpf_exp_sinh(mpf_t dst_val, const mpf_t src_val)
+{
+	mpf_t r;
+	mpf_t vf2;
+	mpf_t dst_temp;
+	unsigned long n;
+
+	if (mpf_sgn (src_val) == 0) {
+		/*
+		 * Should never be reached
+		 * but trap this case in order to
+		 * avoid an infinite loop in the serie calculation
+		 */
+		mpf_set_ui (dst_val, 0UL);
+		return;
+	}
+
+	mpf_init2 (r, COB_MPF_CUTOFF+8);
+	mpf_init2 (vf2, COB_MPF_CUTOFF+8);
+	mpf_init2 (dst_temp, COB_MPF_CUTOFF+8);
+
+	/* init first term */
+	mpf_set (r, src_val);
+	mpf_set (vf2, r);
+	mpf_set (dst_temp, r);
+
+	/* get square of x */
+	mpf_mul (r, r, r);
+
+	n = 3;
+	do {
+		unsigned long j = (n-1UL) * n;
+
+		mpf_mul (vf2, vf2, r);
+		mpf_div_ui (vf2, vf2, (unsigned long)j);
+		mpf_add (dst_temp, dst_temp, vf2);
+
+		n = n+2;
+        } while (vf2->_mp_exp > -(long)(COB_MPF_CUTOFF + 8 ) / (long)GMP_NUMB_BITS);
+
+	mpf_set (dst_val, dst_temp);
+
+	mpf_clear (r);
+	mpf_clear (vf2);
+	mpf_clear (dst_temp);
+
+	return;
+}
 /*
  * AGM (Arithmetic-Geometric Mean):
  * The AGM of two positive numbers a and b is the common limit
@@ -1059,6 +1216,8 @@ cob_mpf_log10 (mpf_t dst_val, const mpf_t src_val)
 	mpf_set (dst_val, dst_temp);
 	mpf_clear (dst_temp);
 }
+
+/* Trigonometric formulae (formulas?) from Wikipedia */
 
 /* Sin function */
 /* sin (x) = (reduce to pi/2) */
