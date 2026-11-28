@@ -1,4 +1,9 @@
 
+2026-11-27  Ramy George <ramygeorge19@gmail.com>
+
+	* HACKING: added a brief overview for the use of profiling tools further
+	  explained in tests/README.md
+
 2026-11-05  Simon Sobisch <simonsobisch@gnu.org>
 
 	* Makefile.am (vcs-update): do "git pull" if "svn update" fails

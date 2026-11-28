@@ -109,3 +109,13 @@ There should be no difference shown as long as the "old version" passed
 the same tests as the new version - given the example above: there was
 no support for REPORT WRITER in 2.2 so there would be an expected failure
 of the RW tests.
+
+For running the Testsuite with various tools for Memchecks/profiling
+such as: Valgrind, Callgrind, Perf and rr, Include suffix for each tool
+when running the Testsutie
+
+  make check TESTSUITEFLAGS="-k cobcrun" VGSUFFIX=vg
+
+This would run the testsuite and provide valgrind summary at
+build/tests/valgrind/vg. More information for each tool and how to run them
+at tests/README.md
