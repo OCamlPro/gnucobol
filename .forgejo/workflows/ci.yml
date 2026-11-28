@@ -1,0 +1,143 @@
+name: Build and test
+
+# CI of the gitside branches on the Forgejo of OCamlPro. Forgejo only reads
+# .forgejo/workflows when it exists, and GitHub only reads
+# .github/workflows: the GitHub CI of OCamlPro/gnucobol is unchanged.
+#
+# Jobs:
+#   - build: bootstrap, configure (BDB), build and run the testsuite on
+#     Linux (Ubuntu 24.04);
+#   - mirror-github: on a push to gitside-master or gitside-gnucobol-3.x,
+#     when the build passes, pushes the tested commit to the same branch
+#     of github.com/OCamlPro/gnucobol and of the GitHub repository of the
+#     customers, without forcing (a branch that has diverged on GitHub
+#     makes the job fail instead of being overwritten). Each push is
+#     skipped while its secrets are not set. See .forgejo/README.md.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and testsuite (Linux, BDB)
+    runs-on: build-rootless
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install packages
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install autoconf automake make libtool flex bison \
+               autopoint gettext help2man texinfo gcc libgmp-dev \
+               libncurses-dev libdb5.3-dev libxml2-dev libcjson-dev
+
+      - name: Bootstrap
+        run: ./build_aux/bootstrap install
+
+      # The image has libreadline (GitHub's has not): configure then adds
+      # -lreadline to the libraries of libcob only, and the link of
+      # bin/cobfile (4.x), which calls readline, fails with --as-needed.
+      # Built without readline, as on GitHub.
+      - name: Configure
+        run: |
+          mkdir _build && cd _build
+          ../configure --with-db --enable-cobc-internal-checks \
+                       --enable-hardening \
+                       --with-pkgversion="GnuCOBOL Forgejo CI" \
+                       ac_cv_lib_readline_readline=no
+
+      - name: Build
+        run: make -C _build --jobs=$(($(nproc)+1))
+
+      - name: Testsuite
+        run: |
+          export TERM=vt100
+          make -C _build check TESTSUITEFLAGS="--jobs=$(($(nproc)+1))" || {
+            make -C _build/tests check TESTSUITEFLAGS="--recheck --verbose"
+            exit 1; }
+
+      - name: Upload logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs
+          path: |
+            _build/config.log
+            _build/tests/testsuite.log
+
+  mirror-github:
+    name: Push ${{ github.ref_name }} to GitHub
+    needs: [build]
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/gitside-master' ||
+       github.ref == 'refs/heads/gitside-gnucobol-3.x')
+    runs-on: build-rootless
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to GitHub
+        env:
+          MIRROR_KEY: ${{ secrets.MIRROR_DEPLOY_KEY }}
+          CUSTOMERS_KEY: ${{ secrets.CUSTOMERS_DEPLOY_KEY }}
+          CUSTOMERS_TOKEN: ${{ secrets.CUSTOMERS_TOKEN }}
+          CUSTOMERS_URL: ${{ secrets.CUSTOMERS_REPO_URL }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          echo "event=$GITHUB_EVENT_NAME ref=$GITHUB_REF sha=$GITHUB_SHA"
+          case "$BRANCH" in
+            gitside-master|gitside-gnucobol-3.x) ;;
+            *) echo "$BRANCH is not a gitside branch: not pushed"; exit 0 ;;
+          esac
+          # only the commit at the tip of the gitside branch of Forgejo
+          tip=$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "$GITHUB_SHA is not the tip of $BRANCH ($tip): not pushed"
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          ssh-keyscan -t ed25519,rsa github.com >> ~/.ssh/known_hosts
+          # push_to NAME URL KEY: push the tested commit, not forced
+          push_to () {
+            if [ -z "$2" ] || [ -z "$3" ]; then
+              echo "$1: secrets not set, not pushed"
+              return 0
+            fi
+            printf '%s\n' "$3" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+              git push "$2" "$GITHUB_SHA:refs/heads/$BRANCH"
+          }
+          # push_https NAME URL TOKEN: the same over HTTPS with a token,
+          # which, unlike a deploy key, can be allowed to change
+          # .github/workflows (fine-grained token: Contents and Workflows)
+          push_https () {
+            url=$(echo "$2" | sed 's|^git@github.com:|https://github.com/|')
+            auth=$(printf 'x-access-token:%s' "$3" | base64 -w0)
+            git -c http.extraHeader="Authorization: basic $auth" \
+              push "$url" "$GITHUB_SHA:refs/heads/$BRANCH"
+          }
+          status=0
+          push_to "OCamlPro/gnucobol" \
+            git@github.com:OCamlPro/gnucobol.git "$MIRROR_KEY" || status=1
+          if [ -n "$CUSTOMERS_TOKEN" ] && [ -n "$CUSTOMERS_URL" ]; then
+            push_https "repository of the customers" \
+              "$CUSTOMERS_URL" "$CUSTOMERS_TOKEN" || status=1
+          else
+            push_to "repository of the customers" \
+              "$CUSTOMERS_URL" "$CUSTOMERS_KEY" || status=1
+          fi
+          rm -f ~/.ssh/deploy_key
+          exit $status

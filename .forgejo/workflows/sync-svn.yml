@@ -1,0 +1,91 @@
+name: Sync with SVN
+
+# Every 6 hours (and by hand), merges the branches that the SVN mirror
+# pushes to github.com/OCamlPro/gnucobol into the gitside branches of
+# this repository:
+#   master        -> gitside-master
+#   gnucobol-3.x  -> gitside-gnucobol-3.x
+# The gitside branch of GitHub is merged first, so that a change made
+# there by hand (a CI fix, a merged PR) is kept. The SVN mirror itself is
+# not touched.
+#
+# The result is pushed to this repository with the deploy key of the
+# secret FORGE_PUSH_KEY (a push made with the automatic token would not
+# start the CI). That push starts ci.yml, which builds, runs the
+# testsuite and, when it passes, pushes the gitside branch to GitHub.
+# A merge conflict makes the job fail: nothing is pushed, the branch is
+# to be merged by hand. See .forgejo/README.md.
+#
+# Forgejo runs a schedule: from the workflow file of the default branch
+# of the repository only.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+env:
+  UPSTREAM: https://github.com/OCamlPro/gnucobol.git
+
+jobs:
+  sync:
+    name: ${{ matrix.svn }} -> ${{ matrix.gitside }}
+    runs-on: build-rootless
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - svn: master
+            gitside: gitside-master
+          - svn: gnucobol-3.x
+            gitside: gitside-gnucobol-3.x
+
+    steps:
+      - name: Merge and push
+        env:
+          PUSH_KEY: ${{ secrets.FORGE_PUSH_KEY }}
+          SVN: ${{ matrix.svn }}
+          GITSIDE: ${{ matrix.gitside }}
+        run: |
+          test -n "$PUSH_KEY" || { echo "secret FORGE_PUSH_KEY missing"; exit 1; }
+          host=${GITHUB_SERVER_URL#https://}
+          mkdir -p ~/.ssh
+          printf '%s\n' "$PUSH_KEY" > ~/.ssh/forge_push
+          chmod 600 ~/.ssh/forge_push
+          ssh-keyscan -p 2222 -t ed25519,rsa "$host" >> ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/forge_push -o IdentitiesOnly=yes"
+          FORGE="ssh://git@$host:2222/$GITHUB_REPOSITORY.git"
+
+          git clone -q --branch "$GITSIDE" "$FORGE" repo
+          cd repo
+          git config user.name "gitside sync"
+          git config user.email "gitside-sync@noreply.ocamlpro.com"
+          git fetch -q "$UPSTREAM" "$GITSIDE:refs/remotes/github/gitside" \
+                                   "$SVN:refs/remotes/github/svn"
+          before=$(git rev-parse HEAD)
+
+          for ref in github/gitside github/svn; do
+            case $ref in
+              github/svn) what="$SVN (SVN mirror)" ;;
+              *)          what="$GITSIDE of GitHub" ;;
+            esac
+            if git merge-base --is-ancestor "$ref" HEAD; then
+              echo "$what: already merged"
+            elif git merge --no-edit -m "Merge $what into $GITSIDE" "$ref"; then
+              echo "$what: merged"
+            else
+              git merge --abort
+              echo "::error::conflict while merging $ref into $GITSIDE: merge by hand"
+              exit 1
+            fi
+          done
+
+          if [ "$(git rev-parse HEAD)" = "$before" ]; then
+            echo "$GITSIDE is up to date"
+          else
+            git log --oneline "$before..HEAD" | head -20
+            git push origin "HEAD:refs/heads/$GITSIDE"
+          fi
