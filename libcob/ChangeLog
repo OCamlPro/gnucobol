@@ -1,10 +1,36 @@
 
+2026-11-25  Simon Sobisch <simonsobisch@gnu.org>
+
+	* fileio.c (unique_copy): replaced by plain memcpy
+	* fileio.c (sort_cmps): replaced manual loop for non-collation with memcmp
+	* fileio.c (sort_cmp_col): renamed from sort_cmps, caller adjusted to
+	  only use this if collation is active
+	* fileio.c (cob_file_sort_compare, cob_read_item, cob_free_list):
+	  refactored for easier debugging / slightly better performance
+	* fileio.c (indexed_open) [WITH_ANY_ISAM]: only do optional file handling 
+	  if the ISAM file is reported as not existing
+
+2026-11-24  Simon Sobisch <simonsobisch@gnu.org>
+
+	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_normalize_angle):
+	  new constant cob_two_over_pi
+	* intrinsic.c (cob_mpf_cos): slight loop and reorder optimization
+	* intrinsic.c (cob_mpf_atan): reduce scope of one mpf var, removing
+	  unnecessary init/clear
+
+	assisted by Devin.AI via DeepWiki
+	* intrinsic.c (cob_normalize_angle): drop temp vars, calculate quadrant
+	  via mpf
+	* intrinsic.c (cob_mpf_exp, cob_mpf_cos, cob_mpf_atan): drop temp var for
+	  checking end of series with mp_eq - instead compare the usable bits
+	  for that directly
+	* intrinsic.c (cob_mpf_atan): decrease precision in series calculation,
+	  similar to what is used in cob_mpf_cos
+
 2026-11-23  Simon Sobisch <simonsobisch@gnu.org>
 
 	* intrinsic.c (cob_mpf_log): drop unneeded temporary field,
 	  simplified tiny case
-	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_mpf_log):
-	  new constant cob_pi_half
 
 	assisted by Devin.AI via DeepWiki
 	* intrinsic.c (cob_agm_log): pre-compute iterations instead of
@@ -60,6 +86,11 @@
 	* common.c, common.h, coblocal.h, call.c: rename COB_LOAD_GLOBAL to
 	  COB_LOAD_VISIBILITY and update related configuration and enum names
 
+2026-11-01  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_mpf_cos): correct error that prevent optimization
+	  change COB_COS_DIVIDE value
+
 2026-10-31  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
 
 	* intrinsic.c (cob_mpf_log): simplify for tiny number
@@ -70,7 +101,7 @@
 	  delimters when they are longer than the source
 	* intrinsic.c (numval): better handling of too huge input data, raising
 	  EC-ARGUMENT-EXCEPTION and instead of overflow pass the maximum digits,
-      justified right
+	  justified right
 	* common.c (cob_expand_env_string): prevent overflow in case of unexpected
 	  long environment variable names
 	* common.c (cb_config_entry): prevent overflow in case of not existing
@@ -269,6 +300,19 @@
 
 	* common.h (cob_module_type): add COB_MODULE_TYPE_CLASS,
 	  COB_MODULE_TYPE_INTERFACE, COB_MODULE_TYPE_METHOD
+
+2026-04-10  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (setup_cob_pi, cob_exit_intrinsic, cob_mpf_log):
+	  add cob_half_pi constant
+	* intrinsic.c (cob_normalize_angle, cob_mpf_sin, cob_mpf_cos, cob_mpf_acos,
+	  cob_mpf_asin, cob_mpf_atan): simplify & optimize, use cob_half_pi
+
+2026-04-04  Denis Hugonnard-Roche <dhugonnard@users.sourceforge.net>
+
+	* intrinsic.c (cob_normalize_angle): new_function
+	* intrinsic.c (cob_mpf_cos, cob_mpf_sin): better performance with use of
+	  cob_normalize_angle
 
 2026-03-02  Fabrice Le Fessant <fabrice.le_fessant@ocamlpro.com>
 
