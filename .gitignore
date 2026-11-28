@@ -21,6 +21,7 @@
 Makefile.in
 Makefile
 .*
+!/.forgejo/
 
 # generated releases
 /*.7z
