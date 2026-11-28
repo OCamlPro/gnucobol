@@ -1,4 +1,10 @@
 
+2026-11-20  Guillaume Bertholon <guillaume.bertholon@ocamlpro.com>
+
+	* testsuite.src/run_misc.at (Test dump feature (4)): use an address in
+	  the first page, which is never mapped, instead of an arbitrary one that
+	  may be mapped (as seen on Win32), so that accessing it always faults
+
 2026-09-21  Simon Sobisch <simonsobisch@gnu.org>
 
 	* perf_stat.sh, perf_record.sh: new scripts based on functions previously
