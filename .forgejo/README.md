@@ -59,8 +59,12 @@ Names starting with `GITHUB_`, `GITEA_` or `FORGEJO_` are refused.
   can push to every branch of the repository: protect `master` and
   `gnucobol-3.x` (the SVN mirror) with a GitHub ruleset that only lets
   the mirror push to them.
-- `CUSTOMERS_REPO_URL` and `CUSTOMERS_DEPLOY_KEY` (optional, for
-  `mirror-github`): the SSH URL of the GitHub repository of the
-  customers (kept in a secret, so that it does not appear here) and the
-  private part of a deploy key with write access on it. The gitside
-  branches are pushed there too.
+- `CUSTOMERS_REPO_URL` and `CUSTOMERS_TOKEN` or `CUSTOMERS_DEPLOY_KEY`
+  (optional, for `mirror-github`): the SSH URL of the GitHub repository
+  of the customers (kept in a secret, so that it does not appear here),
+  and either a fine-grained token restricted to that repository, with
+  the permissions Contents and Workflows (read and write), or the
+  private part of a deploy key with write access on it. The token is
+  used when set: GitHub refuses a push that changes `.github/workflows`
+  from a deploy key, which happens each time those files change on
+  `OCamlPro/gnucobol`. The gitside branches are pushed there too.

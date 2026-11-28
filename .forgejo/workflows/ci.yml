@@ -92,6 +92,7 @@ jobs:
         env:
           MIRROR_KEY: ${{ secrets.MIRROR_DEPLOY_KEY }}
           CUSTOMERS_KEY: ${{ secrets.CUSTOMERS_DEPLOY_KEY }}
+          CUSTOMERS_TOKEN: ${{ secrets.CUSTOMERS_TOKEN }}
           CUSTOMERS_URL: ${{ secrets.CUSTOMERS_REPO_URL }}
           BRANCH: ${{ github.ref_name }}
         run: |
@@ -119,10 +120,24 @@ jobs:
             GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
               git push "$2" "$GITHUB_SHA:refs/heads/$BRANCH"
           }
+          # push_https NAME URL TOKEN: the same over HTTPS with a token,
+          # which, unlike a deploy key, can be allowed to change
+          # .github/workflows (fine-grained token: Contents and Workflows)
+          push_https () {
+            url=$(echo "$2" | sed 's|^git@github.com:|https://github.com/|')
+            auth=$(printf 'x-access-token:%s' "$3" | base64 -w0)
+            git -c http.extraHeader="Authorization: basic $auth" \
+              push "$url" "$GITHUB_SHA:refs/heads/$BRANCH"
+          }
           status=0
           push_to "OCamlPro/gnucobol" \
             git@github.com:OCamlPro/gnucobol.git "$MIRROR_KEY" || status=1
-          push_to "repository of the customers" \
-            "$CUSTOMERS_URL" "$CUSTOMERS_KEY" || status=1
+          if [ -n "$CUSTOMERS_TOKEN" ] && [ -n "$CUSTOMERS_URL" ]; then
+            push_https "repository of the customers" \
+              "$CUSTOMERS_URL" "$CUSTOMERS_TOKEN" || status=1
+          else
+            push_to "repository of the customers" \
+              "$CUSTOMERS_URL" "$CUSTOMERS_KEY" || status=1
+          fi
           rm -f ~/.ssh/deploy_key
           exit $status
